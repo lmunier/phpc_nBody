@@ -1,2 +1,3 @@
+# Remove unwanted files on github
 .idea/
 cmake-build-debug/
