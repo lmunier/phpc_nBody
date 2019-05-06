@@ -1,0 +1,4 @@
+/home/lmunier/Programs/clion-2019.1/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /media/lmunier/Serieux/EPFL/Master/2eme_annee/Semestre_2/Parallel_and_High_Performance_Computing/Project
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/lmunier/Serieux/EPFL/Master/2eme_annee/Semestre_2/Parallel_and_High_Performance_Computing/Project/cmake-build-debug
