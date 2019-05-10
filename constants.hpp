@@ -5,10 +5,14 @@
 #ifndef PROJECT_CONSTANTS_HPP
 #define PROJECT_CONSTANTS_HPP
 
-#define G 6.67408*10^-11
+#include <math.h>
+
+#define G 6.67408*pow(10, -11)
 #define epsilon 0.005
 
 #define DIM_2 2
 #define DIM_3 3
+
+enum property {POS, VEL, LOAD};
 
 #endif //PROJECT_CONSTANTS_HPP

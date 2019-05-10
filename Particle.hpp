@@ -8,22 +8,47 @@
 #include "constants.hpp"
 #include "Vector.hpp"
 
+#include <iostream>
+#include <string>
+
 template<typename Type>
 class Particle {
 public:
-    Particle (float mass, Type pos) : pos(pos), m(mass) {}
+    explicit Particle (float mass = 0.0f, Type pos = Type()) : pos(pos), m(mass) {}
 
     // Return value of updated to know if this particle is already updated to new state
     bool is_updated() {return this->updated;}
 
-    // Return private variable pos
-    Type get_pos() {return this->pos;}
+    // Set update state fo the particle
+    void update(bool state) {this->updated = state;}
 
-    // Return private variable vel
-    Type get_vel() {return this->vel;}
+    // Return private variable
+    Type get(property p) {
+        switch (p) {
+            case POS :
+                return this->pos;
+            case VEL :
+                return this->vel;
+            case LOAD :
+                return this->load;
+            default:
+                break;
+        }
+    }
 
-    // Return private variable vel
-    Type get_load() {return this->load;}
+    // Set private variable from particle
+    Type set(property p, Type vec) {
+        switch (p) {
+            case POS :
+                return this->pos = vec;
+            case VEL :
+                return this->vel = vec;
+            case LOAD :
+                return this->load = vec;
+            default:
+                break;
+        }
+    }
 
 
 private:
