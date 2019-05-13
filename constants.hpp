@@ -15,7 +15,8 @@
 #define NB_DIM DIM_3
 
 #define NB_PARTICLES 2
-#define SHIFT 512
+#define SHIFT 256
+#define MASS_MAX 10
 
 enum property {POS, VEL, LOAD, MASS};
 

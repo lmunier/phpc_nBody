@@ -6,6 +6,7 @@
 #define PROJECT_CELL_HPP
 
 #include <vector>
+#include <boost/variant.hpp>
 
 #include "constants.hpp"
 #include "Particle.hpp"
@@ -16,7 +17,8 @@ using namespace std;
 template<typename Type>
 class Cell : public Particle<Type> {
 public:
-    explicit Cell(Type dim = Type(), Type mass_pos = Type()) {
+    explicit Cell(Type center = Type(), Type dim = Type(), Type mass_pos = Type()) {
+        this->_center = center;
         this->_size = dim;
         this->_mass_pos = mass_pos;
     }
@@ -32,11 +34,12 @@ public:
         }
     }
 
+    Type _center;
     Type _size;
     Type _mass_pos;
 
     Cell* _prev;
-    vector<Particle<Type>*> _next{};
+    vector< Particle<Type>*> _next{};
 };
 
 
