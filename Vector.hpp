@@ -11,12 +11,19 @@
 template<typename Type>
 class Vector2 {
 public:
+    Type x;
+    Type y;
+
     explicit Vector2(Type x_val = 0.0f, Type y_val = 0.0f) :
             x(x_val),
             y(y_val) {}
 
-    virtual void print_pos() {
+    virtual void print() {
         printf("Vector2f : %f \t %f\n", this->x, this->y);
+    }
+
+    virtual float norm() {
+        return sqrtf(this->x*this->x + this->y*this->y);
     }
 
     Vector2<Type> operator-= (Vector2 vec) {
@@ -27,7 +34,7 @@ public:
     }
 
     Vector2<Type> operator- (Vector2 vec) {
-        Vector2 tmp = Vector2(0.0f, 0.0f);
+        Vector2 tmp = Vector2();
 
         tmp.x = this->x - vec.x;
         tmp.y = this->y - vec.y;
@@ -43,7 +50,7 @@ public:
     }
 
     Vector2<Type> operator+ (Vector2 vec) {
-        Vector2 tmp = Vector2(0.0f, 0.0f);
+        Vector2 tmp = Vector2();
 
         tmp.x = this->x + vec.x;
         tmp.y = this->y + vec.y;
@@ -51,9 +58,14 @@ public:
         return tmp;
     }
 
-protected:
-    Type x;
-    Type y;
+    Vector2<Type> operator* (Type scalar) {
+        Vector2 tmp = Vector2();
+
+        tmp.x = scalar*this->x;
+        tmp.y = scalar*this->y;
+
+        return tmp;
+    }
 };
 
 typedef Vector2<float> Vector2f;
@@ -62,12 +74,18 @@ typedef Vector2<float> Vector2f;
 template<typename Type>
 class Vector3 : public Vector2<Type> {
 public:
+    Type z;
+
     explicit Vector3(Type x_val = 0.0f, Type y_val = 0.0f, Type z_val = 0.0f) :
         Vector2f(x_val, y_val),
         z(z_val) {}
 
-    void print_pos() override {
+    void print() override {
         printf("Vector3f : %f \t %f \t %f\n", this->x, this->y, this->z);
+    }
+
+    float norm() override {
+        return sqrtf(this->x*this->x + this->y*this->y + this->z*this->z);
     }
 
     Vector3<Type> operator-= (Vector3 vec) {
@@ -79,7 +97,7 @@ public:
     }
 
     Vector3<Type> operator- (Vector3 vec) {
-        Vector3 tmp = Vector3(0.0f, 0.0f, 0.0f);
+        Vector3 tmp = Vector3();
 
         tmp.x = this->x - vec.x;
         tmp.y = this->y - vec.y;
@@ -97,7 +115,7 @@ public:
     }
 
     Vector3<Type> operator+ (Vector3 vec) {
-        Vector3 tmp = Vector3(0.0f, 0.0f, 0.0f);
+        Vector3 tmp = Vector3();
 
         tmp.x = this->x + vec.x;
         tmp.y = this->y + vec.y;
@@ -106,8 +124,15 @@ public:
         return tmp;
     }
 
-protected:
-    Type z;
+    Vector3<Type> operator* (Type scalar) {
+        Vector3 tmp = Vector3();
+
+        tmp.x = scalar*this->x;
+        tmp.y = scalar*this->y;
+        tmp.z = scalar*this->z;
+
+        return tmp;
+    }
 };
 
 typedef Vector3<float> Vector3f;

@@ -14,54 +14,73 @@
 template<typename Type>
 class Particle {
 public:
-    explicit Particle (float mass = 0.0f, Type pos = Type()) : pos(pos), m(mass) {}
+    explicit Particle (float mass = 0.0f, Type pos = Type()) : _pos(pos), _m(mass) {}
 
     // Return value of updated to know if this particle is already updated to new state
-    bool is_updated() {return this->updated;}
+    bool is_updated() {return this->_updated;}
 
     // Set update state fo the particle
-    void update(bool state) {this->updated = state;}
+    void update(bool state) {this->_updated = state;}
 
     // Return private variable
     Type get(property p) {
         switch (p) {
             case POS :
-                return this->pos;
+                return this->_pos;
             case VEL :
-                return this->vel;
+                return this->_vel;
             case LOAD :
-                return this->load;
+                return this->_load;
             default:
                 break;
         }
     }
 
-    // Set private variable from particle
-    Type set(property p, Type vec) {
+    float get_mass() {
+        return this->_m;
+    }
+
+    // Set private variables from particle
+    void set(property p, Type vec) {
         switch (p) {
             case POS :
-                return this->pos = vec;
+                this->_pos = vec;
+                break;
             case VEL :
-                return this->vel = vec;
+                this->_vel = vec;
+                break;
             case LOAD :
-                return this->load = vec;
+                this->_load = vec;
+                break;
             default:
                 break;
         }
+    }
+
+    void set(property p, float mass) {
+        if (p == MASS) {
+            this->_m = mass;
+        }
+    }
+
+    void del_particle() {
+        delete this->_pos;
+        delete this->_vel;
+        delete this->_load;
     }
 
 
 private:
     // Set boolean to keep a state if updated already or not
-    bool updated = false;
+    bool _updated = false;
 
     // Store position, velocity and load of the particle in space domain
-    Type pos;
-    Type vel;
-    Type load;
+    Type _pos;
+    Type _vel;
+    Type _load;
 
     // Store mass of the particle
-    float m = 0.0f;
+    float _m = 0.0f;
 };
 
 

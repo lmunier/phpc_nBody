@@ -7,12 +7,16 @@
 
 #include <math.h>
 
-#define G 6.67408*pow(10, -11)
+#define G 6.67408
 #define epsilon 0.005
 
 #define DIM_2 2
 #define DIM_3 3
+#define NB_DIM DIM_3
 
-enum property {POS, VEL, LOAD};
+#define NB_PARTICLES 2
+#define SHIFT 512
+
+enum property {POS, VEL, LOAD, MASS};
 
 #endif //PROJECT_CONSTANTS_HPP
