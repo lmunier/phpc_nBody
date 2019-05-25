@@ -1,9 +1,11 @@
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <cstdint>
 #include <random>
 #include <type_traits>
 #include <typeinfo>
+#include <vector>
 
 #include "constants.hpp"
 #include "Vector.hpp"
@@ -13,13 +15,7 @@ using namespace std;
 using namespace Tree;
 
 template <typename Type>
-Type compute_load(Particle<Type>* part1, Particle<Type>* part2) {
-    Type tmp = part1->get(POS) - part2->get(POS);
-    return tmp*(G*part1->get_mass()*part2->get_mass()/tmp.norm());
-}
-
-template <typename Type>
-void generate_data(Cell<Type>* root, Type vec, int nb_particles) {
+void generate_data(Cell<Type>* root, Type vec, int nb_particles, vector< Particle<Type>* >* list_particles = nullptr) {
     float p_m = MASS_MAX;
     float x_rnd, p_x = 0.5*root->_size.x;
     float y_rnd, p_y = 0.5*root->_size.y;
@@ -53,9 +49,13 @@ void generate_data(Cell<Type>* root, Type vec, int nb_particles) {
 
         // Create new particle
 #if NB_DIM == DIM_2
-        auto new_particle = new Particle<vec_Type>(dist_m(rd), vec_Type(x_rnd, y_rnd));
+        auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd));
 #elif NB_DIM == DIM_3
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
+#endif
+
+#ifdef PRINT
+        list_particles->push_back(new_particle);
 #endif
 
         store_particle(root, new_particle);
@@ -79,7 +79,7 @@ void subdivide_tree(Cell<Type>* previous, Type vec) {
             z = !z;
 
 #if NB_DIM == DIM_2
-        vec_Type center = vec_Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)));
+        Type center = Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)));
 #elif NB_DIM == DIM_3
         Type center = Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)), size.z*(0.5*pow(-1, z)));
 #endif
@@ -127,24 +127,53 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle_1, Particle<Type>
     }
 }
 
+#ifdef PRINT
+template <typename Type>
+void generate_file(vector< Particle<Type>* >* list_particles) {
+    ofstream csv_file;
+    string filename = "test.csv";
+
+    csv_file.open(filename);
+
+#if NB_DIM == DIM_2
+    csv_file << "x,y\n";
+#elif NB_DIM == DIM_3
+    csv_file << "x,y,z\n";
+#endif
+
+    for (auto it = list_particles->begin(); it != list_particles->end(); ++it) {
+        csv_file << (*it)->get(POS).to_file();
+    }
+
+    csv_file.close();
+}
+#endif
 
 template <typename Type>
 void barnes_hut(Type vec_dim) {
+#ifdef PRINT
+    vector< Particle<Type>* > list_particles;
+#endif
+
     auto root = new Cell<Type>(Type(), vec_dim, Type());
     root->_prev = root;
-    generate_data(root, Type(), NB_PARTICLES);
+    generate_data(root, Type(), NB_PARTICLES, &list_particles);
 
     // Test vector implementation
-    Particle<Type> ptr = Particle<Type>(2.0f, Type(2.0f, 5.0f));
-    Particle<Type> ptr2 = Particle<Type>(2.0f, Type(3.0f, -6.0f));
+    Particle<Type> ptr = Particle<Type>(2.0f, Type(2.0f, 5.0f, 9.0f));
+    Particle<Type> ptr2 = Particle<Type>(2.0f, Type(3.0f, -6.0f, -4.5f));
     ptr2.get(POS).print();
 
     Particle<Type> ptr3 = Particle<Type>();
     ptr3.set(POS, ptr.get(POS) + ptr2.get(POS));
     ptr3.get(POS).print();
 
+#ifdef PRINT
+    generate_file(&list_particles);
+#endif
+
     // Compute load
-    compute_load(&ptr, &ptr2).print();
+    ptr.compute_load(&ptr2).print();
 }
 
 int main(int argc, char *argv[]) {

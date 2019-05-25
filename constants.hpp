@@ -7,6 +7,8 @@
 
 #include <math.h>
 
+#define PRINT
+
 #define G 6.67408
 #define epsilon 0.005
 

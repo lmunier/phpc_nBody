@@ -6,7 +6,10 @@
 #define PROJECT_VECTOR_HPP
 
 #include <cstdio>
+#include <string>
+#include <iostream>
 
+using namespace std;
 
 template<typename Type>
 class Vector2 {
@@ -22,7 +25,16 @@ public:
         printf("Vector2f : %f \t %f\n", this->x, this->y);
     }
 
-    virtual float norm() {
+#ifdef PRINT
+    virtual string to_file() {
+        string coord;
+        coord = to_string(this->x) + "," + to_string(this->y) + "\n";
+
+        return coord;
+    }
+#endif
+
+    virtual Type norm() {
         return sqrtf(this->x*this->x + this->y*this->y);
     }
 
@@ -84,7 +96,16 @@ public:
         printf("Vector3f : %f \t %f \t %f\n", this->x, this->y, this->z);
     }
 
-    float norm() override {
+#ifdef PRINT
+    virtual string to_file() {
+        string coord;
+        coord = to_string(this->x) + "," + to_string(this->y) + "," + to_string(this->z) + "\n";
+
+        return coord;
+    }
+#endif
+
+    Type norm() override {
         return sqrtf(this->x*this->x + this->y*this->y + this->z*this->z);
     }
 

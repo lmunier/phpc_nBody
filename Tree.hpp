@@ -84,6 +84,11 @@ namespace Tree {
             delete this->_load;
         }
 
+        Type compute_load(Particle<Type>* j_particle) {
+            Type tmp = this->get(POS) - j_particle->get(POS);
+            return tmp*(G*this->get_mass()*j_particle->get_mass()/tmp.norm());
+        }
+
 
     private:
         // Set boolean to keep a state if updated already or not
