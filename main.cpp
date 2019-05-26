@@ -20,6 +20,8 @@ void generate_data(Cell<Type>* root, Type vec, int nb_particles, vector< Particl
     float x_rnd, p_x = 0.5*root->_size.x;
     float y_rnd, p_y = 0.5*root->_size.y;
 
+    vector< Particle<Type>* > other_particle;
+
     random_device rd;
     uniform_real_distribution<float> dist_m(0, p_m);
     uniform_real_distribution<float> dist_x(-p_x, p_x);
@@ -28,17 +30,20 @@ void generate_data(Cell<Type>* root, Type vec, int nb_particles, vector< Particl
     for (int i = 0; i < nb_particles; i++) {
         // Generate random coordinate for a new particle and shift it if it stays in boundaries to stress application
         x_rnd = dist_x(rd);
-        if(fabs(dist_x(rd) - SHIFT) < p_x)
+        if(fabs(x_rnd - SHIFT) < p_x)
             x_rnd -= SHIFT;
 
         y_rnd = dist_y(rd);
-        if(fabs(dist_y(rd) - SHIFT) < p_y)
+        if(fabs(y_rnd - SHIFT) < p_y)
             y_rnd -= SHIFT;
 
 #if NB_DIM == DIM_3
         float z_rnd, p_z = 0.5*root->_size.z;
         uniform_real_distribution<float> dist_z(-p_z, p_z);
+
         z_rnd = dist_z(rd);
+        if(fabs(z_rnd - SHIFT) < p_z)
+            z_rnd -= SHIFT;
 #endif
 
         // Initialize quadtree/octree
@@ -58,20 +63,19 @@ void generate_data(Cell<Type>* root, Type vec, int nb_particles, vector< Particl
         list_particles->push_back(new_particle);
 #endif
 
-        store_particle(root, new_particle);
+        store_particle(root, new_particle, &other_particle);
 
         // Test
-        new_particle->get(POS).print();
+        //new_particle->get(POS).print();
     }
 }
 
 template <typename Type>
 void subdivide_tree(Cell<Type>* previous, Type vec) {
     bool y = true, z = false;
+    Type size = previous->_size*0.5;
 
     for(int n = 0; n < pow(2, NB_DIM); n++) {
-        Type size = previous->_size*0.5;
-
         if (n%2 == 0)
             y = !y;
 
@@ -84,7 +88,9 @@ void subdivide_tree(Cell<Type>* previous, Type vec) {
         Type center = Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)), size.z*(0.5*pow(-1, z)));
 #endif
 
-        auto next = new  Cell<Type>(center, size, center);
+        center = previous->_center + center;
+
+        auto next = new Cell<Type>(center, size, center);
         previous->_next.push_back(next);
         next->_prev = previous;
     }
@@ -110,20 +116,30 @@ int find_cell_idx(Type origin, Type particle) {
 }
 
 template <typename Type>
-void store_particle(Cell<Type>* head, Particle<Type>* particle_1, Particle<Type>* particle_2 = nullptr) {
-    int cell_idx_1 = find_cell_idx(head->_center, particle_1->get(POS));
+void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle<Type>* >* list_p = nullptr) {
+    int cell_idx_1 = find_cell_idx(head->_center, particle->get(POS));
 
-    if (particle_2 != nullptr)
-        int cell_idx_2 = find_cell_idx(head->_center, particle_2->get(POS));
+    if (head->_next.empty()) {
+        head->_next.push_back(particle);
 
-    if (head->_next.empty())
-        head->_next.push_back(particle_1);
-    else if (head->_next[cell_idx_1]->get_type() == CellT)
-        store_particle((Cell<Type>*) head->_next[cell_idx_1], particle_1, particle_2);
-    else {
-        particle_2 = (Particle<Type>*) head->_next[cell_idx_1];
-        subdivide_tree((Cell<Type>*) head->_next[cell_idx_1], Type());
-        store_particle(head, particle_1, particle_2);
+        if (!list_p->empty()) {
+            particle = list_p->back();
+            list_p->pop_back();
+
+            do {
+                head = head->_prev;
+            } while (head->_prev != nullptr);
+
+            store_particle(head, particle, list_p);
+        }
+    } else if (head->_next[0]->get_type() == ParticleT) {
+        list_p->push_back((Particle<Type>*) head->_next[0]);
+        head->_next.clear();
+
+        subdivide_tree(head, Type());
+        store_particle(head, particle, list_p);
+    } else {
+        store_particle((Cell<Type>*) head->_next[cell_idx_1], particle, list_p);
     }
 }
 
@@ -160,28 +176,28 @@ void barnes_hut(Type vec_dim) {
     generate_data(root, Type(), NB_PARTICLES, &list_particles);
 
     // Test vector implementation
-    Particle<Type> ptr = Particle<Type>(2.0f, Type(2.0f, 5.0f, 9.0f));
+    /*Particle<Type> ptr = Particle<Type>(2.0f, Type(2.0f, 5.0f, 9.0f));
     Particle<Type> ptr2 = Particle<Type>(2.0f, Type(3.0f, -6.0f, -4.5f));
     ptr2.get(POS).print();
 
     Particle<Type> ptr3 = Particle<Type>();
     ptr3.set(POS, ptr.get(POS) + ptr2.get(POS));
     ptr3.get(POS).print();
-
+*/
 #ifdef PRINT
     generate_file(&list_particles);
 #endif
 
     // Compute load
-    ptr.compute_load(&ptr2).print();
+//    ptr.compute_load(&ptr2).print();
 }
 
 int main(int argc, char *argv[]) {
 #if NB_DIM == DIM_2
-        int width = 1920, height = 1200;
+        int width = SIDE, height = SIDE;
         barnes_hut(Vector2f(width, height));
 #elif NB_DIM == DIM_3
-        int width = 1920, height = 1200, depth = 1200;
+        int width = SIDE, height = SIDE, depth = SIDE;
         barnes_hut(Vector3f(width, height, depth));
 #endif
 

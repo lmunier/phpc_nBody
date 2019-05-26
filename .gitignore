@@ -1,3 +1,6 @@
 # Remove unwanted files on github
 .idea/
 cmake-build-debug/
+
+# Excluding particles files
+*.csv
