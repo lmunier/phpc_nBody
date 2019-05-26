@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <cstdlib>
 #include <cstdint>
 #include <random>
@@ -64,10 +65,30 @@ void generate_data(Cell<Type>* root, Type vec, int nb_particles, vector< Particl
 #endif
 
         store_particle(root, new_particle, &other_particle);
-
-        // Test
-        //new_particle->get(POS).print();
     }
+}
+
+template <typename Type>
+void update_load(Cell<Type> *head, Particle<Type> *part_loaded) {
+    for (auto it = head->_next.begin(); it != head->_next.end(); ++it) {
+        if ((*it) == nullptr)
+            return;
+        else if ((*it)->get_type() == ParticleT) {
+            if ((*it) != part_loaded)
+                part_loaded->compute_load(dynamic_cast<Particle<Type> *>(*it));
+        } else
+            update_load(dynamic_cast<Cell<Type> *> (*it), part_loaded);
+    }
+}
+
+template <typename Type>
+void update_vel_pos(Particle<Type> *part_loaded) {
+    Type new_velocity = part_loaded->get(LOAD) * (DELTA_T/part_loaded->get_mass()) + part_loaded->get(VEL);
+    Type new_position = new_velocity * DELTA_T + part_loaded->get(POS);
+
+    part_loaded->set(VEL, new_velocity);
+    part_loaded->set(POS, new_position);
+    part_loaded->set(LOAD, Type());
 }
 
 template <typename Type>
@@ -121,14 +142,19 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle
 
     if (head->_next.empty()) {
         head->_next.push_back(particle);
+        head->_m += particle->get_mass();
+        head->_mass_pos = head->_mass_pos + particle->get(POS);
+
+        do {
+            head = head->_prev;
+
+            head->_m += particle->get_mass();
+            head->_mass_pos = head->_mass_pos + particle->get(POS);
+        } while (head->_prev != nullptr);
 
         if (!list_p->empty()) {
             particle = list_p->back();
             list_p->pop_back();
-
-            do {
-                head = head->_prev;
-            } while (head->_prev != nullptr);
 
             store_particle(head, particle, list_p);
         }
@@ -145,9 +171,9 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle
 
 #ifdef PRINT
 template <typename Type>
-void generate_file(vector< Particle<Type>* >* list_particles) {
+void generate_file(vector< Particle<Type>* >* list_particles, int millis_time) {
     ofstream csv_file;
-    string filename = "test.csv";
+    string filename = "../tests/test_" + to_string(millis_time) + ".csv";
 
     csv_file.open(filename);
 
@@ -167,29 +193,22 @@ void generate_file(vector< Particle<Type>* >* list_particles) {
 
 template <typename Type>
 void barnes_hut(Type vec_dim) {
-#ifdef PRINT
     vector< Particle<Type>* > list_particles;
-#endif
 
     auto root = new Cell<Type>(Type(), vec_dim, Type());
     root->_prev = root;
     generate_data(root, Type(), NB_PARTICLES, &list_particles);
 
-    // Test vector implementation
-    /*Particle<Type> ptr = Particle<Type>(2.0f, Type(2.0f, 5.0f, 9.0f));
-    Particle<Type> ptr2 = Particle<Type>(2.0f, Type(3.0f, -6.0f, -4.5f));
-    ptr2.get(POS).print();
+    for (int i = 0; i < ITERATIONS; i++) {
+        for (auto it = list_particles.begin(); it != list_particles.end(); ++it) {
+            update_load(root, *it);
+            update_vel_pos(*it);
 
-    Particle<Type> ptr3 = Particle<Type>();
-    ptr3.set(POS, ptr.get(POS) + ptr2.get(POS));
-    ptr3.get(POS).print();
-*/
 #ifdef PRINT
-    generate_file(&list_particles);
+            generate_file(&list_particles, 1000 * i * DELTA_T);
 #endif
-
-    // Compute load
-//    ptr.compute_load(&ptr2).print();
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {

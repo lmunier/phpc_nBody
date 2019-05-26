@@ -85,8 +85,10 @@ namespace Tree {
         }
 
         Type compute_load(Particle<Type>* j_particle) {
-            Type tmp = this->get(POS) - j_particle->get(POS);
-            return tmp*(G*this->get_mass()*j_particle->get_mass()/tmp.norm());
+            Type tmp = j_particle->get(POS) - this->get(POS);
+            float norm = min(tmp.norm(), (float) EPSILON);
+
+            this->_load = this->_load + tmp*(G*this->get_mass()*j_particle->get_mass()/tmp.norm());
         }
 
 
@@ -115,7 +117,7 @@ namespace Tree {
         my_type get_type() override { return CellT;}
 
         void del_element(Particle<Type>* p) {
-            p->del();
+            p->del_particle();
 
             for(auto it = this->_next.begin(); it != this->_next.end(); ++it) {
                 if (it == p) {

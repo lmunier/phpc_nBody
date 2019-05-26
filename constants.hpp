@@ -10,16 +10,19 @@
 #define PRINT
 
 #define G 6.67408
-#define epsilon 0.005
+#define EPSILON 0.005
 
 #define DIM_2 2
 #define DIM_3 3
-#define NB_DIM DIM_2
+#define NB_DIM DIM_3
 
-#define NB_PARTICLES 5000
-#define SIDE 1000000
+#define NB_PARTICLES 100
+#define SIDE 10000
 #define SHIFT SIDE/3.0
 #define MASS_MAX 10
+
+#define DELTA_T 0.01
+#define ITERATIONS 1000
 
 enum property {POS, VEL, LOAD, MASS};
 
