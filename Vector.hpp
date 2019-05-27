@@ -144,6 +144,21 @@ public:
 
         return tmp;
     }
+
+    /**
+     * Override / to compute on vector3<Type>.
+     *
+     * @param Type value to divide the given vector
+     * @return given vector divide by scalar argument
+     */
+    Vector2<Type> operator/ (Type scalar) {
+        Vector2 tmp = Vector2();
+
+        tmp.x = this->x/scalar;
+        tmp.y = this->y/scalar;
+
+        return tmp;
+    }
 };
 
 /**
@@ -278,6 +293,22 @@ public:
         tmp.x = scalar*this->x;
         tmp.y = scalar*this->y;
         tmp.z = scalar*this->z;
+
+        return tmp;
+    }
+
+    /**
+     * Override / to compute on vector3<Type>.
+     *
+     * @param Type value to divide the given vector
+     * @return given vector divide by scalar argument
+     */
+    Vector3<Type> operator/ (Type scalar) {
+        Vector3 tmp = Vector3();
+
+        tmp.x = this->x/scalar;
+        tmp.y = this->y/scalar;
+        tmp.z = this->z/scalar;
 
         return tmp;
     }

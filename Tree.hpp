@@ -5,7 +5,7 @@
  * @version 1.0
  *
  * Tree file to combine both Particle and Cell class in the same AbstractType. It is use to have vector array with both
- * elements.
+ * elements. It also implement some useful functions related to tree data-structure.
  */
 
 #ifndef PROJECT_TREE_HPP
@@ -173,15 +173,15 @@ namespace Tree {
         }
 
         /**
-         * Compute the load vector between two particle to update the one on the given particle.
+         * Compute the load vector between two particles to update the one passed in argument.
          *
-         * @param j_particle particle which influence the given particle
+         * @param particle where the load is applied
          */
-        void compute_load(Particle<Type>* j_particle) {
-            Type tmp = j_particle->get(POS) - this->get(POS);
+        void compute_load(Particle<Type>* particle) {
+            Type tmp = this->get(POS) - particle->get(POS);
             float norm = min(tmp.norm(), (float) EPSILON);
 
-            this->_load = this->_load + tmp*(G*this->get_mass()*j_particle->get_mass()/tmp.norm());
+            particle->set(LOAD, particle->get(LOAD) + tmp*(G*particle->get_mass()*this->get_mass())/tmp.norm());
         }
 
         /**
@@ -195,6 +195,10 @@ namespace Tree {
             this->set(POS, new_position);
             this->set(LOAD, Type());
         }
+
+        bool is_out_boundaries();
+
+        AbstractType* parent = nullptr;
 
     private:
         bool _updated = false;      /**< @var _updated, state of the given particle */
@@ -235,35 +239,21 @@ namespace Tree {
          */
         my_type get_type() override { return CellT;}
 
+        void generate_data(vector< Particle<Type>* > &list_particles);
+        void subdivide_tree();
+        void store_particle(Particle<Type>* particle, vector< Particle<Type>* >* list_p = nullptr);
+        int find_cell_idx(Type origin, Type particle);
+
         /**
-         * Subdivide a node in 2^NB_DIM sub-cells and fill _next member variable with a pointer to each sub-cell.
+         * Compute the load vector between a particle and a particle cluster represented by a center of mass.
+         *
+         * @param particle where the load is applied
          */
-        void subdivide_tree() {
-            bool y = true, z = false;
-            Type size = this->_size*0.5;
+        void compute_load(Particle<Type>* particle) {
+            Type tmp = this->_mass_pos - particle->get(POS);
+            float norm = tmp.norm();
 
-            /**< Loop to have 2^NB_DIM sub-cells */
-            for(int n = 0; n < pow(2, NB_DIM); n++) {
-                /**< Compute center of the cell */
-                if (n%2 == 0)
-                    y = !y;
-
-                if (n == 4)
-                    z = !z;
-
-#if NB_DIM == DIM_2
-                Type center = Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)));
-#elif NB_DIM == DIM_3
-                Type center = Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)), size.z*(0.5*pow(-1, z)));
-#endif
-
-                center = this->_center + center;
-
-                /**< Fill _next vector array with each new sub-cell */
-                auto next = new Cell<Type>(center, size, center);
-                this->_next.push_back(next);
-                next->_prev = this;
-            }
+            particle->set(LOAD, particle->get(LOAD) + tmp*(G*particle->get_mass()*this->_m)/tmp.norm());
         }
 
         /**
@@ -292,5 +282,20 @@ namespace Tree {
         Cell* _prev;                             /**< @var _prev pointer on the parent cell*/
         vector< Tree::AbstractType*> _next{};    /**< @var _next vector list of the following cells or a particle */
     };
+
+    /**
+     * Update the load applied to a particle.
+     *
+     * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+     * @param head pointer to the current cell of the tree
+     * @param part_loaded pointer to the current particle for which the load is computed
+     */
+/*    template <typename Type>
+    void update_load(Cell<Type> *head, Particle<Type> *part_loaded);
+*/
+    /**
+     * Update tree if a particle is out of its boundaries.
+     */
+//    void update_tree();
 }
 #endif //PROJECT_TREE_HPP

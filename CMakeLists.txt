@@ -1,6 +1,13 @@
-cmake_minimum_required(VERSION 3.13)
-project(Project)
+cmake_minimum_required(VERSION 3.14)
+project(phpc_nBody)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(Project main.cpp Vector.hpp constants.hpp Tree.hpp)
+include_directories(.)
+
+add_executable(phpc_nBody
+        constants.hpp
+        main.cpp
+        Tree.hpp
+        Tree.cpp
+        Vector.hpp)

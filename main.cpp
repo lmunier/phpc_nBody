@@ -20,159 +20,6 @@
 #include "Tree.hpp"
 
 using namespace std;
-using namespace Tree;
-
-/**
- * Generate NB_PARTICLES particles and call function to store them.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer to initial Cell of the tree to construct
- * @param vec vector to give the Type of the vector to the template function
- * @param list_particles pointer on a list of all the pointers on generated particles (if PRINT defined) to generate csv
- */
-template <typename Type>
-void generate_data(Cell<Type>* root, Type vec, vector< Particle<Type>* >* list_particles = nullptr) {
-    float p_m = MASS_MAX;
-    float x_rnd, p_x = 0.5*root->_size.x;
-    float y_rnd, p_y = 0.5*root->_size.y;
-
-    vector< Particle<Type>* > other_particle;
-
-    random_device rd;
-    uniform_real_distribution<float> dist_m(0, p_m);
-    uniform_real_distribution<float> dist_x(-p_x, p_x);
-    uniform_real_distribution<float> dist_y(-p_y, p_y);
-
-    for (int i = 0; i < NB_PARTICLES; i++) {
-        // Generate random coordinate for a new particle and shift it if it stays in boundaries to stress application
-        x_rnd = dist_x(rd);
-        if(fabs(x_rnd - SHIFT) < p_x)
-            x_rnd -= SHIFT;
-
-        y_rnd = dist_y(rd);
-        if(fabs(y_rnd - SHIFT) < p_y)
-            y_rnd -= SHIFT;
-
-#if NB_DIM == DIM_3
-        float z_rnd, p_z = 0.5*root->_size.z;
-        uniform_real_distribution<float> dist_z(-p_z, p_z);
-
-        z_rnd = dist_z(rd);
-        if(fabs(z_rnd - SHIFT) < p_z)
-            z_rnd -= SHIFT;
-#endif
-
-        // Initialize quadtree/octree
-        if(root->_prev == root) {
-            root->subdivide_tree();
-            root->_prev = nullptr;
-        }
-
-        // Create new particle
-#if NB_DIM == DIM_2
-        auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd));
-#elif NB_DIM == DIM_3
-        auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
-#endif
-        if(i == 0)
-            new_particle->set(MASS, 1000);
-
-#ifdef PRINT
-        list_particles->push_back(new_particle);
-#endif
-
-        store_particle(root, new_particle, &other_particle);
-    }
-}
-
-/**
- * Update the load applied to a particle.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param head pointer to the current cell of the tree
- * @param part_loaded pointer to the current particle for which the load is computed
- */
-template <typename Type>
-void update_load(Cell<Type> *head, Particle<Type> *part_loaded) {
-    for (auto it = head->_next.begin(); it != head->_next.end(); ++it) {
-        if ((*it) == nullptr)
-            return;
-        else if ((*it)->get_type() == ParticleT) {
-            if ((*it) != part_loaded)
-                part_loaded->compute_load(dynamic_cast<Particle<Type> *>(*it));
-        } else
-            update_load(dynamic_cast<Cell<Type> *> (*it), part_loaded);
-    }
-}
-
-/**
- * Find the index of the cell in the _next dynamic array where the particle should be stored.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param origin center of the parent cell
- * @param particle current particle to store
- * @return int index of the cell where the particle should be stored
- */
-template <typename Type>
-int find_cell_idx(Type origin, Type particle) {
-    int idx = 0;
-    Type tmp_vec = particle - origin;
-
-    if(tmp_vec.x > 0)
-        idx += 1;
-
-    if(tmp_vec.y < 0)
-        idx += 2;
-
-#if NB_DIM == DIM_3
-    if(tmp_vec.z < 0)
-        idx += 4;
-#endif
-
-    return idx;
-}
-
-/**
- * Store particle in the tree.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param head pointer on current cell to store the particle
- * @param particle pointer on current particle to store
- * @param list_p pointer on a list of pointers on all the particles to store after the current one
- */
-template <typename Type>
-void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle<Type>* >* list_p = nullptr) {
-    int cell_idx_1 = find_cell_idx(head->_center, particle->get(POS));
-
-    if (head->_next.empty()) {
-        head->_next.push_back(particle);
-        head->_m += particle->get_mass();
-        head->_mass_pos = (head->_mass_pos * head->_m + particle->get(POS) * particle->get_mass()) *
-                          ( 1 / (head->_m + particle->get_mass()));
-
-        do {
-            head = head->_prev;
-
-            head->_m += particle->get_mass();
-            head->_mass_pos = head->_mass_pos + particle->get(POS);
-        } while (head->_prev != nullptr);
-
-        if (!list_p->empty()) {
-            particle = list_p->back();
-            list_p->pop_back();
-
-            store_particle(head, particle, list_p);
-        }
-    } else if (head->_next[0]->get_type() == ParticleT) {
-        list_p->push_back((Particle<Type>*) head->_next[0]);
-        head->_next.clear();
-
-        head->subdivide_tree();
-        store_particle(head, particle, list_p);
-    } else {
-        store_particle((Cell<Type>*) head->_next[cell_idx_1], particle, list_p);
-    }
-}
 
 /**
  * If PRINT is defined, generate a csv file to display animation of the result.
@@ -183,7 +30,7 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle
  */
 #ifdef PRINT
 template <typename Type>
-void generate_file(vector< Particle<Type>* >* list_particles, int millis_time) {
+void generate_file(vector< Tree::Particle<Type>* > &list_particles, int millis_time) {
     ofstream csv_file;
     string filename = "../tests/test_" + to_string(millis_time) + ".csv";
 
@@ -195,7 +42,7 @@ void generate_file(vector< Particle<Type>* >* list_particles, int millis_time) {
     csv_file << "x,y,z\n";
 #endif
 
-    for (auto it = list_particles->begin(); it != list_particles->end(); ++it) {
+    for (auto it = list_particles.begin(); it != list_particles.end(); ++it) {
         csv_file << (*it)->get(POS).to_file();
     }
 
@@ -211,19 +58,22 @@ void generate_file(vector< Particle<Type>* >* list_particles, int millis_time) {
  */
 template <typename Type>
 void barnes_hut(Type vec_dim) {
-    vector< Particle<Type>* > list_particles;
+    vector< Tree::Particle<Type>* > list_particles;
 
-    auto root = new Cell<Type>(Type(), vec_dim, Type());
+    auto root = new Tree::Cell<Type>(Type(), vec_dim, Type());
     root->_prev = root;
-    generate_data(root, Type(), &list_particles);
+    root->generate_data(list_particles);
 
     for (int i = 0; i < ITERATIONS; i++) {
         for (auto it = list_particles.begin(); it != list_particles.end(); ++it) {
-            update_load(root, *it);
-            dynamic_cast<Particle<Type> *> (*it)->update_vel_pos();
+            //update_load(root, dynamic_cast<Particle<Type> *> (*it));
+            dynamic_cast<Tree::Particle<Type> *> (*it)->update_vel_pos();
 
+            /*if (dynamic_cast<Particle<Type> *>(*it)->is_out_boundaries())
+                update_tree();
+*/
 #ifdef PRINT
-            generate_file(&list_particles, 1000 * i * DELTA_T);
+            generate_file(list_particles, 1000 * i * DELTA_T);
 #endif
         }
     }
