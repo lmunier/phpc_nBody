@@ -100,8 +100,13 @@ void update_load(Cell<Type> *head, Particle<Type> *part_loaded) {
         else if ((*it)->get_type() == ParticleT) {
             if ((*it) != part_loaded)
                 part_loaded->compute_load(dynamic_cast<Particle<Type> *>(*it));
-        } else
-            update_load(dynamic_cast<Cell<Type> *> (*it), part_loaded);
+        } else {
+            auto *current_cell = dynamic_cast<Cell<Type> *>(*it);
+            if ((current_cell->_size.x / (part_loaded->get(POS) - current_cell->_mass_pos).norm()) < BH_THETA)
+                current_cell->compute_load(part_loaded);
+            else
+                update_load(current_cell, part_loaded);
+        }
     }
 }
 
@@ -146,15 +151,18 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle
 
     if (head->_next.empty()) {
         head->_next.push_back(particle);
-        head->_m += particle->get_mass();
         head->_mass_pos = (head->_mass_pos * head->_m + particle->get(POS) * particle->get_mass()) *
                           ( 1 / (head->_m + particle->get_mass()));
+        head->_m += particle->get_mass();
+
+        particle->parent = head;
 
         do {
             head = head->_prev;
 
+            head->_mass_pos = (head->_mass_pos * head->_m + particle->get(POS) * particle->get_mass()) *
+                              ( 1 / (head->_m + particle->get_mass()));
             head->_m += particle->get_mass();
-            head->_mass_pos = head->_mass_pos + particle->get(POS);
         } while (head->_prev != nullptr);
 
         if (!list_p->empty()) {
@@ -165,13 +173,43 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle
         }
     } else if (head->_next[0]->get_type() == ParticleT) {
         list_p->push_back((Particle<Type>*) head->_next[0]);
+        head->_mass_pos = (head->_mass_pos * head->_m - particle->get(POS) * particle->get_mass()) *
+                          ( 1 / (head->_m - particle->get_mass()));
+        head->_m -= particle->get_mass();
+
+        /**< clear precedent pointers */
         head->_next.clear();
+        particle->parent = nullptr;
 
         head->subdivide_tree();
         store_particle(head, particle, list_p);
     } else {
         store_particle((Cell<Type>*) head->_next[cell_idx_1], particle, list_p);
     }
+}
+
+/**
+ * Test if a particle is out of its cell and return true if it is the case, false otherwise.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param particle pointer on the tested particle
+ * @return true if particle out of its boundaries, false otherwise
+ */
+template<typename Type>
+bool is_out_boundaries(Particle<Type>* particle) {
+    Type distance = particle->get(POS) - dynamic_cast<Cell<Type> *>(particle->parent)->_center;
+    Type cell_size = particle->parent->_size;
+
+    if (2*abs(distance.x) < cell_size.x)
+        return true;
+    else if (2*abs(distance.y) < cell_size.y)
+        return true;
+#if NB_DIM == DIM_3
+    if (2*abs(distance.z) < cell_size.z)
+        return true;
+#endif
+
+    return false;
 }
 
 /**

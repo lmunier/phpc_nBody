@@ -173,16 +173,17 @@ namespace Tree {
         }
 
         /**
-         * Compute the load vector between two particle to update the one on the given particle.
+         * Compute the load vector between two particles to update the one passed in argument.
          *
-         * @param j_particle particle which influence the given particle
+         * @param particle where the load is applied
          */
-        void compute_load(Particle<Type>* j_particle) {
-            Type tmp = j_particle->get(POS) - this->get(POS);
+        void compute_load(Particle<Type>* particle) {
+            Type tmp = this->get(POS) - particle->get(POS);
             float norm = min(tmp.norm(), (float) EPSILON);
 
-            this->_load = this->_load + tmp*(G*this->get_mass()*j_particle->get_mass()/tmp.norm());
+            particle->set(LOAD, particle->get(LOAD) + tmp*(G*particle->get_mass()*this->get_mass())/tmp.norm());
         }
+
 
         /**
          * Update velocity and position of a given particle for a given load on it. Reset load after update.
@@ -195,6 +196,8 @@ namespace Tree {
             this->set(POS, new_position);
             this->set(LOAD, Type());
         }
+
+        AbstractType* parent = nullptr;
 
     private:
         bool _updated = false;      /**< @var _updated, state of the given particle */
@@ -265,6 +268,19 @@ namespace Tree {
                 next->_prev = this;
             }
         }
+
+        /**
+         * Compute the load vector between a particle and a particle cluster represented by a center of mass.
+         *
+         * @param particle where the load is applied
+         */
+        void compute_load(Particle<Type>* particle) {
+            Type tmp = this->_mass_pos - particle->get(POS);
+            float norm = tmp.norm();
+
+            particle->set(LOAD, particle->get(LOAD) + tmp*(G*particle->get_mass()*this->_m)/tmp.norm());
+        }
+
 
         /**
          * Delete a given particle.
