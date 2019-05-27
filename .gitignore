@@ -4,3 +4,6 @@ cmake-build-debug/
 
 # Excluding particles files
 *.csv
+
+# Excluding documentation
+doc/*
