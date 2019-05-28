@@ -55,6 +55,9 @@ enum property {
     VEL,          /**< enum value for velocity property */
     LOAD,         /**< enum value for load property */
     MASS,         /**< enum value for mass property */
+    MASS_POS,     /**< enum value for center of mass position property */
+    CENTER,       /**< enum value for center of cell property */
+    DIM,          /**< enum value for dimension of cell property */
 };
 
 #endif //PROJECT_CONSTANTS_HPP
