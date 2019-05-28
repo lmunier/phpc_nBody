@@ -31,7 +31,7 @@ using namespace Tree;
  * @param list_particles pointer on a list of all the pointers on generated particles (if PRINT defined) to generate csv
  */
 template <typename Type>
-void generate_data(Cell<Type>* root, Type vec, vector< Particle<Type>* >* list_particles = nullptr) {
+void generate_data(Cell<Type>* root, Type vec, vector< Particle<Type>* >* list_particles) {
     float p_m = MASS_MAX;
     float x_rnd, p_x = 0.5*root->_size.x;
     float y_rnd, p_y = 0.5*root->_size.y;
@@ -74,13 +74,8 @@ void generate_data(Cell<Type>* root, Type vec, vector< Particle<Type>* >* list_p
 #elif NB_DIM == DIM_3
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
 #endif
-        if(i == 0)
-            new_particle->set(MASS, 1000);
 
-#ifdef PRINT
         list_particles->push_back(new_particle);
-#endif
-
         store_particle(root, new_particle, &other_particle);
     }
 }
@@ -146,23 +141,21 @@ int find_cell_idx(Type origin, Type particle) {
  * @param list_p pointer on a list of pointers on all the particles to store after the current one
  */
 template <typename Type>
-void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle<Type>* >* list_p = nullptr) {
+void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle<Type>* >* list_p) {
     int cell_idx_1 = find_cell_idx(head->_center, particle->get(POS));
 
     if (head->_next.empty()) {
         head->_next.push_back(particle);
-        head->_mass_pos = (head->_mass_pos * head->_m + particle->get(POS) * particle->get_mass()) *
-                          ( 1 / (head->_m + particle->get_mass()));
-        head->_m += particle->get_mass();
-
-        particle->parent = head;
+        particle->_parent = head;
+        update_cell(particle, true);
 
         do {
             head = head->_prev;
 
-            head->_mass_pos = (head->_mass_pos * head->_m + particle->get(POS) * particle->get_mass()) *
-                              ( 1 / (head->_m + particle->get_mass()));
-            head->_m += particle->get_mass();
+            if (head == nullptr)
+                break;
+
+            update_cell(particle, true);
         } while (head->_prev != nullptr);
 
         if (!list_p->empty()) {
@@ -173,13 +166,11 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle
         }
     } else if (head->_next[0]->get_type() == ParticleT) {
         list_p->push_back((Particle<Type>*) head->_next[0]);
-        head->_mass_pos = (head->_mass_pos * head->_m - particle->get(POS) * particle->get_mass()) *
-                          ( 1 / (head->_m - particle->get_mass()));
-        head->_m -= particle->get_mass();
+        update_cell(dynamic_cast<Particle<Type> *>(head->_next[0]), false);
 
         /**< clear precedent pointers */
         head->_next.clear();
-        particle->parent = nullptr;
+        particle->_parent = nullptr;
 
         head->subdivide_tree();
         store_particle(head, particle, list_p);
@@ -189,23 +180,96 @@ void store_particle(Cell<Type>* head, Particle<Type>* particle, vector< Particle
 }
 
 /**
+ * Update cell total mass and center of mass.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param particle that need to update its cell
+ * @param add boolean value to add or remove properties of the particle
+ */
+template <typename Type>
+void update_cell(Particle<Type> *particle, bool add){
+    auto head = dynamic_cast<Cell<Type> *>(particle->_parent);
+
+    if (add) {
+        head->_mass_pos = (head->_mass_pos * head->_m + particle->get(POS) * particle->get_mass())
+                        / (head->_m + particle->get_mass());
+        head->_m += particle->get_mass();
+    } else {
+        head->_mass_pos = (head->_mass_pos * head->_m - particle->get(POS) * particle->get_mass())
+                        / (head->_m - particle->get_mass());
+        head->_m -= particle->get_mass();
+    }
+}
+
+/**
+ * Update tree to change place of particles out of original boundaries.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param particle that change its place
+ */
+template <typename Type>
+void update_tree(Particle<Type> *particle, vector< Particle<Type>* >* list_particles, int index_part){
+    int nb_particles = 0;
+    auto parent = dynamic_cast<Cell<Type> *>(particle->_parent);
+
+    vector< Particle<Type>* > other_particle;
+
+    /**< delete pointer from cell to particle */
+    parent->_next.clear();
+
+    /**< parent of the particle go back from one level */
+    particle->_parent = parent->_prev;
+    parent = parent->_prev;
+
+    if (is_out_boundaries(particle)) {
+        for (auto it = parent->_next.begin(); it != parent->_next.end(); ++it) {
+            if (!dynamic_cast<Cell<Type> *>(*it)->_next.empty())
+                nb_particles++;
+        }
+
+        /**< delete empty level of the parent node */
+        if (nb_particles == 0)
+            dynamic_cast<Cell<Type> *>(particle->_parent)->del_level();
+    }
+
+    /**< continue to go up in level to find right cell for our particle */
+    while(is_out_boundaries(particle)) {
+        update_cell(particle, false);
+        particle->_parent = dynamic_cast<Cell<Type> *>(particle->_parent)->_prev;
+
+        if (particle->_parent == nullptr) {
+            particle->del_particle();
+            list_particles->erase(list_particles->begin() + index_part);
+            return;
+        }
+    }
+
+    store_particle(dynamic_cast<Cell<Type> *>(particle->_parent), particle, &other_particle);
+}
+
+/**
  * Test if a particle is out of its cell and return true if it is the case, false otherwise.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param particle pointer on the tested particle
  * @return true if particle out of its boundaries, false otherwise
  */
-template<typename Type>
+template <typename Type>
 bool is_out_boundaries(Particle<Type>* particle) {
-    Type distance = particle->get(POS) - dynamic_cast<Cell<Type> *>(particle->parent)->_center;
-    Type cell_size = particle->parent->_size;
+    Type position = particle->get(POS);
+    Type center = dynamic_cast<Cell<Type> *>(particle->_parent)->_center;
+    Type cell_size = dynamic_cast<Cell<Type> *>(particle->_parent)->_size;
 
-    if (2*abs(distance.x) < cell_size.x)
+    Type distance = position - center;
+
+    if (2*abs(distance.x) > cell_size.x)
         return true;
-    else if (2*abs(distance.y) < cell_size.y)
+
+    if (2*abs(distance.y) > cell_size.y)
         return true;
+
 #if NB_DIM == DIM_3
-    if (2*abs(distance.z) < cell_size.z)
+    if (2*abs(distance.z) > cell_size.z)
         return true;
 #endif
 
@@ -256,14 +320,27 @@ void barnes_hut(Type vec_dim) {
     generate_data(root, Type(), &list_particles);
 
     for (int i = 0; i < ITERATIONS; i++) {
-        for (auto it = list_particles.begin(); it != list_particles.end(); ++it) {
-            update_load(root, *it);
-            dynamic_cast<Particle<Type> *> (*it)->update_vel_pos();
+        int idx_part = 0;
+
+        do {
+            update_load(root, list_particles[idx_part]);
+            auto current_particle = dynamic_cast<Particle<Type> *>(list_particles[idx_part]);
+            current_particle->update_vel_pos();
+
+            if(list_particles.size() < 10)
+                cout << "coucou" << endl;
+
+            if (is_out_boundaries(current_particle)) {
+                update_cell(current_particle, false);
+                update_tree(current_particle, &list_particles, idx_part);
+            }
+
+            idx_part++;
+        } while(idx_part != list_particles.size());
 
 #ifdef PRINT
-            generate_file(&list_particles, 1000 * i * DELTA_T);
+        generate_file(&list_particles, 1000 * i * DELTA_T);
 #endif
-        }
     }
 }
 

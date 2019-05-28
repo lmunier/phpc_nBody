@@ -167,9 +167,7 @@ namespace Tree {
          * Delete a given particle.
          */
         void del_particle() {
-            delete this->_pos;
-            delete this->_vel;
-            delete this->_load;
+            delete this->_parent;
         }
 
         /**
@@ -197,7 +195,7 @@ namespace Tree {
             this->set(LOAD, Type());
         }
 
-        AbstractType* parent = nullptr;
+        AbstractType* _parent = nullptr;
 
     private:
         bool _updated = false;      /**< @var _updated, state of the given particle */
@@ -287,15 +285,9 @@ namespace Tree {
          *
          * @param p pointer of the particle to be deleted
          */
-        void del_element(Particle<Type>* p) {
-            p->del_particle();
-
-            for(auto it = this->_next.begin(); it != this->_next.end(); ++it) {
-                if (it == p) {
-                    (*it) = nullptr;
-                    break;
-                }
-            }
+        void del_level() {
+            while(!this->_next.empty())
+                this->_next.pop_back();
         }
 
         float _m = 0.0f;                         /**< @var _m total mass of the particles in this cell */
