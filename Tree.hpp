@@ -73,6 +73,13 @@ namespace Tree {
          */
         explicit Particle(float mass = 0.0f, Type pos = Type()) : _pos(pos), _m(mass) {}
 
+
+        /**
+         * Destructor to correctly delete a given particle.
+         */
+        ~Particle() override {
+            delete this->_parent;
+        }
         /**
          * Return the type of the given class.
          *
@@ -164,13 +171,6 @@ namespace Tree {
         }
 
         /**
-         * Delete a given particle.
-         */
-        void del_particle() {
-            delete this->_parent;
-        }
-
-        /**
          * Compute the load vector between two particles to update the one passed in argument.
          *
          * @param particle where the load is applied
@@ -230,6 +230,18 @@ namespace Tree {
         }
 
         /**
+         * Destructor to correctly delete all pointer in the Cell element.
+         */
+        ~Cell() override{
+            delete this->_prev;
+
+            while(!this->_next.empty()) {
+                delete this->_next.back();
+                this->_next.pop_back();
+            }
+        }
+
+        /**
          * Return the type of the given class.
          *
          * @return enum value CellT
@@ -286,8 +298,10 @@ namespace Tree {
          * @param p pointer of the particle to be deleted
          */
         void del_level() {
-            while(!this->_next.empty())
+            while(!this->_next.empty()) {
+                delete this->_next.back();
                 this->_next.pop_back();
+            }
         }
 
         float _m = 0.0f;                         /**< @var _m total mass of the particles in this cell */

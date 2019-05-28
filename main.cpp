@@ -31,7 +31,7 @@ using namespace Tree;
  * @param list_particles pointer on a list of all the pointers on generated particles (if PRINT defined) to generate csv
  */
 template <typename Type>
-void generate_data(Cell<Type>* root, Type vec, vector< Particle<Type>* >* list_particles) {
+void generate_data(Cell<Type>* root, Type vec) {
     float p_m = MASS_MAX;
     float x_rnd, p_x = 0.5*root->_size.x;
     float y_rnd, p_y = 0.5*root->_size.y;
@@ -75,7 +75,6 @@ void generate_data(Cell<Type>* root, Type vec, vector< Particle<Type>* >* list_p
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
 #endif
 
-        list_particles->push_back(new_particle);
         store_particle(root, new_particle, &other_particle);
     }
 }
@@ -88,17 +87,21 @@ void generate_data(Cell<Type>* root, Type vec, vector< Particle<Type>* >* list_p
  * @param part_loaded pointer to the current particle for which the load is computed
  */
 template <typename Type>
-void update_load(Cell<Type> *head, Particle<Type> *part_loaded) {
+void update_load(Cell<Type> *head, Particle<Type> *part_loaded = nullptr) {
+    static Cell<Type>* root = head;
+
     for (auto it = head->_next.begin(); it != head->_next.end(); ++it) {
         if ((*it) == nullptr)
             return;
         else if ((*it)->get_type() == ParticleT) {
-            if ((*it) != part_loaded)
-                part_loaded->compute_load(dynamic_cast<Particle<Type> *>(*it));
+            if (part_loaded == nullptr)
+                update_load(root, dynamic_cast<Particle<Type> *>(*it));
+            else if ((*it) != part_loaded)
+                part_loaded->compute_load(dynamic_cast<Particle<Type> *>(*it));//TODO
         } else {
             auto *current_cell = dynamic_cast<Cell<Type> *>(*it);
-            if ((current_cell->_size.x / (part_loaded->get(POS) - current_cell->_mass_pos).norm()) < BH_THETA)
-                current_cell->compute_load(part_loaded);
+            if (part_loaded != nullptr && (current_cell->_size.x / (part_loaded->get(POS) - current_cell->_mass_pos).norm()) < BH_THETA)
+                current_cell->compute_load(part_loaded); //TODO
             else
                 update_load(current_cell, part_loaded);
         }
@@ -208,7 +211,7 @@ void update_cell(Particle<Type> *particle, bool add){
  * @param particle that change its place
  */
 template <typename Type>
-void update_tree(Particle<Type> *particle, vector< Particle<Type>* >* list_particles, int index_part){
+void update_tree(Particle<Type> *particle){
     int nb_particles = 0;
     auto parent = dynamic_cast<Cell<Type> *>(particle->_parent);
 
@@ -238,8 +241,7 @@ void update_tree(Particle<Type> *particle, vector< Particle<Type>* >* list_parti
         particle->_parent = dynamic_cast<Cell<Type> *>(particle->_parent)->_prev;
 
         if (particle->_parent == nullptr) {
-            particle->del_particle();
-            list_particles->erase(list_particles->begin() + index_part);
+            delete particle;
             return;
         }
     }
@@ -285,25 +287,49 @@ bool is_out_boundaries(Particle<Type>* particle) {
  */
 #ifdef PRINT
 template <typename Type>
-void generate_file(vector< Particle<Type>* >* list_particles, int millis_time) {
+void generate_file(Particle<Type>* particle, int millis_time) {
     ofstream csv_file;
     string filename = "../tests/test_" + to_string(millis_time) + ".csv";
 
-    csv_file.open(filename);
+    csv_file.open(filename, ios::app);
 
+    /**< Check if file is empty */
+    if (csv_file.tellp() == 0) {
 #if NB_DIM == DIM_2
-    csv_file << "x,y\n";
+        csv_file << "x,y\n";
 #elif NB_DIM == DIM_3
-    csv_file << "x,y,z\n";
+        csv_file << "x,y,z\n";
 #endif
-
-    for (auto it = list_particles->begin(); it != list_particles->end(); ++it) {
-        csv_file << (*it)->get(POS).to_file();
     }
 
+    csv_file << particle->get(POS).to_file();
     csv_file.close();
 }
 #endif
+
+template <typename Type>
+void update_particles(Cell<Type>* root, int millis_time){
+    for (auto it = root->_next.begin(); it != root->_next.end(); ++it) {
+        if ((*it) == nullptr) {
+            return;
+        } else if ((*it)->get_type() == ParticleT) {
+            auto current_particle = dynamic_cast<Particle<Type> *>(*it);
+
+            current_particle->update_vel_pos();
+
+            if (is_out_boundaries(current_particle)) {
+                update_cell(current_particle, false);
+                update_tree(current_particle);
+            }
+
+#ifdef PRINT
+            generate_file(current_particle, millis_time);
+#endif
+        } else if ((*it)->get_type() == CellT) {
+            update_particles(dynamic_cast<Cell<Type> *>(*it), millis_time);
+        }
+    }
+}
 
 /**
  * Barnes hut part of the algorithm.
@@ -313,34 +339,13 @@ void generate_file(vector< Particle<Type>* >* list_particles, int millis_time) {
  */
 template <typename Type>
 void barnes_hut(Type vec_dim) {
-    vector< Particle<Type>* > list_particles;
-
     auto root = new Cell<Type>(Type(), vec_dim, Type());
     root->_prev = root;
-    generate_data(root, Type(), &list_particles);
+    generate_data(root, Type());
 
     for (int i = 0; i < ITERATIONS; i++) {
-        int idx_part = 0;
-
-        do {
-            update_load(root, list_particles[idx_part]);
-            auto current_particle = dynamic_cast<Particle<Type> *>(list_particles[idx_part]);
-            current_particle->update_vel_pos();
-
-            if(list_particles.size() < 10)
-                cout << "coucou" << endl;
-
-            if (is_out_boundaries(current_particle)) {
-                update_cell(current_particle, false);
-                update_tree(current_particle, &list_particles, idx_part);
-            }
-
-            idx_part++;
-        } while(idx_part != list_particles.size());
-
-#ifdef PRINT
-        generate_file(&list_particles, 1000 * i * DELTA_T);
-#endif
+        update_load(root);
+        update_particles(root, 1000 * i * DELTA_T);
     }
 }
 
