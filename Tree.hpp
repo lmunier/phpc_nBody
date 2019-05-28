@@ -216,11 +216,8 @@ namespace Tree {
          * @return true if particle out of its boundaries, false otherwise
          */
         bool is_out_boundaries() {
-            Type position = this->get(POS);
-            Type center = this->_parent->get(CENTER);
+            Type distance = this->get(POS) - this->_parent->get(CENTER);
             Type cell_size = this->_parent->get(DIM);
-
-            Type distance = position - center;
 
             if (2*abs(distance.x) > cell_size.x)
                 return true;
@@ -242,18 +239,27 @@ namespace Tree {
          * @param particle that need to update its cell
          * @param add boolean value to add or remove properties of the particle
          */
-        void update_cell(bool add){
+        void update_cell(bool add) override {
             auto head = this->_parent;
 
-            if (add) {
-                head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() + this->get(POS) * this->get_mass())
-                                    / (head->get_mass() + this->get_mass()));
-                head->set_mass(head->get_mass() + this->get_mass());
-            } else {
-                head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
-                                    / (head->get_mass() - this->get_mass()));
-                head->set_mass(head->get_mass() - this->get_mass());
-            }
+            do {
+                if (add) {
+                    head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() + this->get(POS) * this->get_mass())
+                                        / (head->get_mass() + this->get_mass()));
+                    head->set_mass(head->get_mass() + this->get_mass());
+                } else {
+                    if (!(head->get_mass() - this->get_mass()) < EPSILON) {
+                        head->set(MASS_POS,
+                                  (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
+                                  / (head->get_mass() - this->get_mass()));
+                        head->set_mass(head->get_mass() - this->get_mass());
+                    } else {
+                        head->set(MASS_POS, head->get(CENTER));
+                        head->set_mass(0.0f);
+                    }
+                }
+                head = head->get_prev();
+            }while(head != nullptr);
         }
 
         /**
@@ -264,19 +270,23 @@ namespace Tree {
          */
         int update_tree() override {
             int nb_particles = 0;
-            auto parent = this->_parent;
 
             /**< delete pointer from cell to particle */
-            parent->get_next().clear();
+            auto next = this->_parent->get_next();
+            next.clear();
 
             /**< parent of the particle go back from one level */
-            this->_parent = parent->get_prev();
-            parent = parent->get_prev();
+            this->_parent = this->_parent->get_prev();
 
+            /**< Check for empty level */
             if (this->is_out_boundaries()) {
-                for (auto it = parent->get_next().begin(); it != parent->get_next().end(); ++it) {
-                    if (!(*it)->get_next().empty())
+                next = this->_parent->get_next();
+
+                for (auto it = next.begin(); it != next.end(); ++it) {
+                    if (!(*it)->get_next().empty()) {
                         nb_particles++;
+                        break;
+                    }
                 }
 
                 /**< delete empty level of the parent node */
@@ -289,15 +299,12 @@ namespace Tree {
                 this->update_cell(false);
                 this->_parent = this->_parent->get_prev();
 
-                if (this->_parent == nullptr) {
-                    delete this;
+                if (this->_parent == nullptr)
                     return -1;
-                }
             }
 
             return 0;
         }
-
 
     private:
         AbstractType<Type>* _parent = nullptr;
@@ -442,38 +449,24 @@ namespace Tree {
         void store_particle(AbstractType<Type>* particle, vector< AbstractType<Type>* > *list_p) override {
             int cell_idx_1 = find_cell_idx(this->_center, particle->get(POS));
 
-            if (list_p == nullptr) {
-                vector< AbstractType<Type>* > other_particle;
-                list_p = &other_particle;
-            }
-
             if (this->_next.empty()) {
                 this->_next.push_back(particle);
                 particle->set_parent(this);
                 particle->update_cell(true);
 
-                Cell<Type>* previous;
-                do {
-                    previous = this->_prev;
-                    if (previous == nullptr)
-                        break;
-
-                    particle->update_cell(true);
-                } while (previous->_prev != nullptr);
-
                 if (!list_p->empty()) {
                     particle = list_p->back();
                     list_p->pop_back();
 
-                    this->store_particle(particle, list_p);
+                    this->_prev->store_particle(particle, list_p);
                 }
             } else if (this->_next[0]->get_type() == ParticleT) {
-                list_p->push_back((Particle<Type>*) this->_next[0]);
+                list_p->push_back(this->_next[0]);
                 this->_next[0]->update_cell(false);
 
                 /**< clear precedent pointers */
                 this->_next.clear();
-                particle->set_parent(nullptr);
+                list_p->back()->set_parent(nullptr);
 
                 this->subdivide_tree();
                 this->store_particle(particle, list_p);

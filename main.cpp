@@ -36,6 +36,8 @@ void generate_data(Cell<Type>* root, Type vec) {
     float x_rnd, p_x = 0.5*root->_size.x;
     float y_rnd, p_y = 0.5*root->_size.y;
 
+    vector< AbstractType<Type>* > other_particle{};
+
     random_device rd;
     uniform_real_distribution<float> dist_m(0, p_m);
     uniform_real_distribution<float> dist_x(-p_x, p_x);
@@ -73,7 +75,8 @@ void generate_data(Cell<Type>* root, Type vec) {
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
 #endif
 
-        root->store_particle(new_particle, nullptr);
+        cout << new_particle << endl;
+        root->store_particle(new_particle, &other_particle);
     }
 }
 
@@ -165,18 +168,23 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
 
 template <typename Type>
 void update_particles(Cell<Type>* root, int millis_time){
+    vector< AbstractType<Type>* > other_particle{};
+
     for (auto it = root->_next.begin(); it != root->_next.end(); ++it) {
         if ((*it) == nullptr) {
             return;
         } else if ((*it)->get_type() == ParticleT) {
             (*it)->update_vel_pos();
 
-            if ((*it)->is_out_boundaries()) {
+            /*if ((*it)->is_out_boundaries()) {
                 (*it)->update_cell(false);
 
-                if ((*it)->update_tree() == 0)
-                    (*it)->get_parent()->store_particle((*it), nullptr);
-            }
+                if ((*it)->update_tree() == 0) {
+                    auto parent = (*it)->get_parent();
+                    parent->store_particle(*it, &other_particle);
+                } else
+                    delete *it;
+            }*/
 
 #ifdef PRINT
             generate_file(*it, millis_time);
