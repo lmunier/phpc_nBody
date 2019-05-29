@@ -80,12 +80,12 @@ public:
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector2<Type> operator-= (Vector2 vec) {
+    /*Vector2<Type> operator-= (Vector2 vec) {
         this->x -= vec.x;
         this->y -= vec.y;
 
         return *this;
-    }
+    }*/
 
     /**
      * Override - to compute on vector2<Type>.
@@ -97,7 +97,12 @@ public:
         Vector2 tmp = Vector2();
 
         tmp.x = this->x - vec.x;
+        if (abs(tmp.x) < EPSILON)
+            tmp.x = EPSILON;
+
         tmp.y = this->y - vec.y;
+        if (abs(tmp.y) < EPSILON)
+            tmp.y = EPSILON;
 
         return tmp;
     }
@@ -108,12 +113,12 @@ public:
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector2<Type> operator+= (Vector2 vec) {
+    /*Vector2<Type> operator+= (Vector2 vec) {
         this->x += vec.x;
         this->y += vec.y;
 
         return *this;
-    }
+    }*/
 
     /**
      * Override + to compute on vector2<Type>.
@@ -227,13 +232,13 @@ public:
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector3<Type> operator-= (Vector3 vec) {
+    /*Vector3<Type> operator-= (Vector3 vec) {
         this->x -= vec.x;
         this->y -= vec.y;
         this->z -= vec.z;
 
         return *this;
-    }
+    }*/
 
     /**
      * Override - to compute on vector3<Type>.
@@ -245,25 +250,33 @@ public:
         Vector3 tmp = Vector3();
 
         tmp.x = this->x - vec.x;
+        if (abs(tmp.x) < EPSILON)
+            tmp.x = EPSILON;
+
         tmp.y = this->y - vec.y;
+        if (abs(tmp.y) < EPSILON)
+            tmp.y = EPSILON;
+
         tmp.z = this->z - vec.z;
+        if (abs(tmp.z) < EPSILON)
+            tmp.z = EPSILON;
 
         return tmp;
     }
 
-    /**
+    /**abs(
      * Override += to compute on vector3<Type>.
      *
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector3<Type> operator+= (Vector3 vec) {
+    /*Vector3<Type> operator+= (Vector3 vec) {
         this->x += vec.x;
         this->y += vec.y;
         this->z += vec.z;
 
         return *this;
-    }
+    }*/
 
     /**
      * Override + to compute on vector3<Type>.
@@ -290,9 +303,9 @@ public:
     Vector3<Type> operator* (Type scalar) {
         Vector3 tmp = Vector3();
 
-        tmp.x = scalar*this->x;
-        tmp.y = scalar*this->y;
-        tmp.z = scalar*this->z;
+        tmp.x = scalar * this->x;
+        tmp.y = scalar * this->y;
+        tmp.z = scalar * this->z;
 
         return tmp;
     }
@@ -306,9 +319,9 @@ public:
     Vector3<Type> operator/ (Type scalar) {
         Vector3 tmp = Vector3();
 
-        tmp.x = this->x/scalar;
-        tmp.y = this->y/scalar;
-        tmp.z = this->z/scalar;
+        tmp.x = this->x / scalar;
+        tmp.y = this->y / scalar;
+        tmp.z = this->z / scalar;
 
         return tmp;
     }

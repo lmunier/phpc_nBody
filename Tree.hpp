@@ -92,6 +92,7 @@ namespace Tree {
         virtual AbstractType<Type>* get_prev() {};
 
         virtual vector< AbstractType<Type>* > get_next() {};
+        virtual void clear_next() {};
 
         float _m = 0.0f;            /**< @var mass of the given particle/cell */
     };
@@ -190,7 +191,7 @@ namespace Tree {
          */
         void compute_load(AbstractType<Type>* particle) override {
             Type tmp = this->get(POS) - particle->get(POS);
-            float norm = min(tmp.norm(), (float) EPSILON);
+            float norm = max(tmp.norm(), (float) EPSILON);
 
             particle->set(LOAD, particle->get(LOAD) + tmp*(G*particle->get_mass()*this->get_mass())/tmp.norm());
         }
@@ -248,16 +249,17 @@ namespace Tree {
                                         / (head->get_mass() + this->get_mass()));
                     head->set_mass(head->get_mass() + this->get_mass());
                 } else {
-                    if (!(head->get_mass() - this->get_mass()) < EPSILON) {
+                    if (abs(head->get_mass() - this->get_mass()) < EPSILON) {
+                        head->set(MASS_POS, head->get(CENTER));
+                        head->set_mass(0.0f);
+                    } else {
                         head->set(MASS_POS,
                                   (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
                                   / (head->get_mass() - this->get_mass()));
                         head->set_mass(head->get_mass() - this->get_mass());
-                    } else {
-                        head->set(MASS_POS, head->get(CENTER));
-                        head->set_mass(0.0f);
                     }
                 }
+
                 head = head->get_prev();
             }while(head != nullptr);
         }
@@ -270,28 +272,28 @@ namespace Tree {
          */
         int update_tree() override {
             int nb_particles = 0;
+            vector< AbstractType<Type>* > other_particle{};
 
             /**< delete pointer from cell to particle */
-            auto next = this->_parent->get_next();
-            next.clear();
+            this->_parent->clear_next();
 
             /**< parent of the particle go back from one level */
             this->_parent = this->_parent->get_prev();
 
             /**< Check for empty level */
             if (this->is_out_boundaries()) {
-                next = this->_parent->get_next();
-
-                for (auto it = next.begin(); it != next.end(); ++it) {
-                    if (!(*it)->get_next().empty()) {
+                for (auto n : this->_parent->get_next()) {
+                    if (!(n->get_next().empty())) {
                         nb_particles++;
                         break;
                     }
                 }
 
                 /**< delete empty level of the parent node */
-                if (nb_particles == 0)
+                if (nb_particles == 0) {
                     this->_parent->del_level();
+                }
+
             }
 
             /**< continue to go up in level to find right cell for our particle */
@@ -303,6 +305,7 @@ namespace Tree {
                     return -1;
             }
 
+            this->_parent->store_particle(this, &other_particle);
             return 0;
         }
 
@@ -337,12 +340,13 @@ namespace Tree {
          * Destructor to correctly delete all pointer in the Cell element.
          */
         ~Cell() override{
+            this->_prev = nullptr;
             delete this->_prev;
 
-            while(!this->_next.empty()) {
-                delete this->_next.back();
-                this->_next.pop_back();
-            }
+            for (auto n : this->_next)
+                delete n;
+
+            this->_next.clear();
         }
 
         /**
@@ -380,6 +384,10 @@ namespace Tree {
 
         vector< AbstractType<Type>* > get_next() override {
             return this->_next;
+        }
+
+        void clear_next() override {
+            this->_next.clear();
         }
 
         /**
@@ -493,10 +501,13 @@ namespace Tree {
          * @param p pointer of the particle to be deleted
          */
         void del_level() override {
-            while(!this->_next.empty()) {
-                delete this->_next.back();
-                this->_next.pop_back();
-            }
+            for (auto n : this->_next)
+                delete n;
+
+            this->_next.clear();
+
+            this->set_mass(0.0f);
+            this->_mass_pos = Type();
         }
 
         Type _center;                            /**< @var vector position of the center of the given cell */

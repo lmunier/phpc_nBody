@@ -75,7 +75,6 @@ void generate_data(Cell<Type>* root, Type vec) {
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
 #endif
 
-        cout << new_particle << endl;
         root->store_particle(new_particle, &other_particle);
     }
 }
@@ -88,24 +87,22 @@ void generate_data(Cell<Type>* root, Type vec) {
  * @param part_loaded pointer to the current particle for which the load is computed
  */
 template <typename Type>
-void update_load(Cell<Type> *head, Particle<Type> *part_loaded = nullptr) {
-    static Cell<Type>* root = head;
+void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nullptr) {
+    static AbstractType<Type>* root = head;
 
-    for (auto it = head->_next.begin(); it != head->_next.end(); ++it) {
-        if ((*it) == nullptr)
+    for (auto n : head->get_next()) {
+        if (n == nullptr)
             return;
-        else if ((*it)->get_type() == ParticleT) {
+        else if (n->get_type() == ParticleT) {
             if (part_loaded == nullptr)
-                update_load(root, dynamic_cast<Particle<Type>*>(*it));
-            else if ((*it) != part_loaded)
-                (*it)->compute_load(part_loaded);
+                update_load(root, n);
+            else if (n != part_loaded)
+                n->compute_load(part_loaded);
         } else {
-            auto current_cell = dynamic_cast<Cell<Type>*>(*it);
-
-            if (part_loaded != nullptr && (current_cell->_size.x / (part_loaded->get(POS) - current_cell->_mass_pos).norm()) < BH_THETA)
-                (*it)->compute_load(part_loaded);
+            if (part_loaded != nullptr && (n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
+                n->compute_load(part_loaded);
             else
-                update_load(current_cell, part_loaded);
+                update_load(n, part_loaded);
         }
     }
 }
@@ -167,30 +164,28 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
 #endif
 
 template <typename Type>
-void update_particles(Cell<Type>* root, int millis_time){
+void update_particles(AbstractType<Type>* root, int millis_time){
     vector< AbstractType<Type>* > other_particle{};
 
-    for (auto it = root->_next.begin(); it != root->_next.end(); ++it) {
-        if ((*it) == nullptr) {
+    for (auto n : root->get_next()) {
+        if (n == nullptr) {
             return;
-        } else if ((*it)->get_type() == ParticleT) {
-            (*it)->update_vel_pos();
+        } else if (n->get_type() == ParticleT) {
+            n->update_vel_pos();
 
-            /*if ((*it)->is_out_boundaries()) {
-                (*it)->update_cell(false);
+            if (n->is_out_boundaries()) {
+                n->update_cell(false);
 
-                if ((*it)->update_tree() == 0) {
-                    auto parent = (*it)->get_parent();
-                    parent->store_particle(*it, &other_particle);
-                } else
-                    delete *it;
-            }*/
+                if (n->update_tree() == -1)
+                    delete n;
+            }
 
 #ifdef PRINT
-            generate_file(*it, millis_time);
+            if (n != nullptr)
+                generate_file(n, millis_time);
 #endif
-        } else if ((*it)->get_type() == CellT) {
-            update_particles(dynamic_cast<Cell<Type>*>(*it), millis_time);
+        } else if (n->get_type() == CellT && !n->get_next().empty()) {
+            update_particles(n, millis_time);
         }
     }
 }
