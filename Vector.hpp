@@ -136,6 +136,12 @@ public:
         tmp.x = this->x/scalar;
         tmp.y = this->y/scalar;
 
+        if (isinf(tmp.x))
+            cout << "Coucou vector inf x" << endl;
+
+        if (isinf(tmp.y))
+            cout << "Coucou vector inf y" << endl;
+
         return tmp;
     }
 };

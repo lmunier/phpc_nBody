@@ -37,15 +37,15 @@ using namespace std::chrono;
 
 #define DIM_2 2                /**< number of dimension in 2D */
 #define DIM_3 3                /**< number of dimension in 3D */
-#define NB_DIM DIM_2           /**< number of dimension chosen for the project */
+#define NB_DIM DIM_3           /**< number of dimension chosen for the project */
 
-#define NB_PARTICLES 5         /**< number of particles for the project */
-#define SIDE 100               /**< side of the area considered for the project */
+#define NB_PARTICLES 1000         /**< number of particles for the project */
+#define SIDE 100000               /**< side of the area considered for the project */
 #define SHIFT SIDE/3.0         /**< shift each particles position to unbalanced probability of particles position */
 #define MASS_MAX 10            /**< maximum of mass value for a particle */
 
-#define DELTA_T 0.01           /**< duration of each update timestep */
-#define ITERATIONS 1000        /**< number of iterations to solve nBody problem */
+#define DELTA_T 0.005           /**< duration of each update timestep */
+#define ITERATIONS 10000        /**< number of iterations to solve nBody problem */
 
 /**
  * @enum property of the particle

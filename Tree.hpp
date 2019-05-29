@@ -63,9 +63,9 @@ namespace Tree {
          */
         float get_mass() { return this->_m; }
 
-        virtual bool get_state() {};
-
         AbstractType<Type>* get_parent() { return this->_parent; }
+
+        virtual bool get_init() {};
 
         /**
          * Set the new _m attribute value
@@ -74,14 +74,14 @@ namespace Tree {
          */
         void set_mass(float mass) { this->_m = mass; }
 
-        virtual void set_state(bool state) {};
-
         /**
          * Set the new _parent attribute value
          *
          * @param parent new pointer on AbstractType<Type> value to set the attribute
          */
         void set_parent(AbstractType<Type>* parent) { this->_parent = parent; }
+
+        virtual void set_init(bool init) {};
 
         virtual Type get(property p) = 0;
         virtual void set(property p, Type vec) {};
@@ -93,7 +93,7 @@ namespace Tree {
         virtual bool is_updated(int iteration) {};
 
         virtual void subdivide_tree() {};
-        virtual void store_particle(AbstractType<Type>* particle, vector< AbstractType<Type>* > *list_p) {};
+        virtual void store_particle(AbstractType<Type>* particle, AbstractType<Type>* prev_part) {};
         virtual void del_level() {};
 
         virtual vector< AbstractType<Type>* > get_next() {};
@@ -160,7 +160,7 @@ namespace Tree {
             }
         }
 
-        bool get_state() override { return this->_state; }
+        bool get_init() override { return this->_init; }
 
         /**
          * Set attribute value of one of the following properties for a given particle :
@@ -187,7 +187,7 @@ namespace Tree {
             }
         }
 
-        void set_state(bool state) override { this->_state = state; }
+        void set_init(bool init) override {this->_init = init; }
 
         /**
          * Compute the load vector between two particles to update the one passed in argument.
@@ -221,8 +221,11 @@ namespace Tree {
          * @return true if particle out of its boundaries, false otherwise
          */
         bool is_out_boundaries() {
-            Type distance = this->get(POS) - this->_parent->get(CENTER);
-            Type cell_size = this->_parent->get(DIM);
+            if (this->get_parent() == nullptr)
+                return true;
+
+            Type distance = this->get(POS) - this->get_parent()->get(CENTER);
+            Type cell_size = this->get_parent()->get(DIM);
 
             if (2*abs(distance.x) > cell_size.x)
                 return true;
@@ -247,25 +250,38 @@ namespace Tree {
         void update_cell(bool add) override {
             auto head = this->get_parent();
 
-            do {
-                if (add) {
-                    head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() + this->get(POS) * this->get_mass())
-                                        / (head->get_mass() + this->get_mass()));
-                    head->set_mass(head->get_mass() + this->get_mass());
-                } else {
-                    /**< Avoid having a division by zero */
-                    if (abs(head->get_mass() - this->get_mass()) < EPSILON) {
-                        head->set(MASS_POS, head->get(CENTER));
-                        head->set_mass(0.0f);
-                    } else {
-                        head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
-                                            / (head->get_mass() - this->get_mass()));
-                        head->set_mass(head->get_mass() - this->get_mass());
-                    }
-                }
+            if(head->get_mass() < 0)
+                cout << "Negativ mass" << endl;
 
-                head = head->get_parent();
-            } while(head != nullptr);
+            if (add) {
+                float mass_tot = head->get_mass() + this->get_mass();
+
+                head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() + this->get(POS) * this->get_mass())
+                                    / mass_tot);
+                head->set_mass(mass_tot);
+            } else {
+                /**< Avoid having a division by zero */
+                float mass_tot = head->get_mass() - this->get_mass();
+
+                mass_tot = max(mass_tot, (float) EPSILON);
+
+                if (mass_tot == 0.0f)
+                    head->set(MASS_POS, head->get(CENTER));
+                else
+                    head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
+                                        / mass_tot);
+
+                head->set_mass(mass_tot);
+            }
+
+            if (isinf(head->get(MASS_POS).x))
+                cout << "Coucou inf x" << endl;
+
+            if (isinf(head->get(MASS_POS).y))
+                cout << "Coucou inf y" << endl;
+
+            if (this->_init)
+                return;
         }
 
         /**
@@ -275,52 +291,59 @@ namespace Tree {
          * @param particle that change its place
          */
         int update_tree() override {
-            int nb_particles = 0;
-            vector< AbstractType<Type>* > other_particle{};
-
-            /**< delete pointer from cell to particle */
-            this->_parent->clear_next();
-
-            /**< parent of the particle go back from one level */
-            this->_parent = this->_parent->get_parent();
-
-            /**< Check for empty level */
-            if (this->is_out_boundaries()) {
-                for (auto n : this->_parent->get_next()) {
-                    if (!(n->get_next().empty())) {
-                        nb_particles++;
-                        break;
-                    }
-                }
-
-                /**< delete empty level of the parent node */
-                if (nb_particles == 0) {
-                    this->_parent->del_level();
-                }
-            }
+            bool first = true;
 
             /**< continue to go up in level to find right cell for our particle */
-            while(this->is_out_boundaries()) {
-                this->update_cell(false);
-                this->_parent = this->_parent->get_parent();
+            while (this->is_out_boundaries()) {
+                int nb_particles = 0;
 
-                if (this->_parent == nullptr)
+                if (this->get_parent() == nullptr)
                     return -1;
+
+                //               /**< Update mass and center of mass of the parent cell */
+                //               this->update_cell(false);
+
+                /**< delete pointer from cell to particle */
+                if (first) {
+                    this->get_parent()->clear_next();
+                    first = false;
+                } else {
+                    /**< Check for empty level */
+                    for (auto n : this->get_parent()->get_next()) {
+                        if (!(n->get_next().empty())) {
+                            nb_particles++;
+                            break;
+                        }
+                    }
+
+                    /**< delete empty level of the parent node */
+                    if (nb_particles == 0)
+                        this->get_parent()->del_level();
+                }
+
+                //               /**< parent of the particle go back from one level */
+                //               this->_parent = this->_parent->get_parent();
+
+                float mass_tot = this->get_parent()->get_mass() - this->get_mass();
+
+                /*if(mass_tot <= 0)
+                    cout << "Negativ mass" << endl;*/
+
+                this->update_cell(false);
+                this->set_parent(this->get_parent()->get_parent());
             }
 
-            this->_parent->store_particle(this, &other_particle);
-            this->_state = !this->_state;
+            this->update_cell(false);
+            this->get_parent()->store_particle(this, nullptr);
             return 0;
         }
 
-        bool is_updated(int iteration) { return this->_state == iteration % 2; }
+     private:
+         bool _init = false;
 
-    private:
-        bool _state = false;
-
-        Type _pos;                  /**< @var position of the given particle */
-        Type _vel;                  /**< @var velocity of the given particle */
-        Type _load;                 /**< @var load on the given particle */
+         Type _pos;                  /**< @var position of the given particle */
+         Type _vel;                  /**< @var velocity of the given particle */
+         Type _load;                 /**< @var load on the given particle */
     };
 
     /**
@@ -353,9 +376,6 @@ namespace Tree {
                 delete n;
 
             this->_next.clear();
-
-            this->set_mass(0.0f);
-            this->_mass_pos = Type();
         }
 
         /**
@@ -459,32 +479,45 @@ namespace Tree {
          * @param particle pointer on current particle to store
          * @param list_p pointer on a list of pointers on all the particles to store after the current one
          */
-        void store_particle(AbstractType<Type>* particle, vector< AbstractType<Type>* > *list_p) override {
-            int cell_idx_1 = find_cell_idx(this->_center, particle->get(POS));
-
+        void store_particle(AbstractType<Type>* particle, AbstractType<Type>* prev_part) override {
             if (this->_next.empty()) {
                 this->_next.push_back(particle);
+
                 particle->set_parent(this);
                 particle->update_cell(true);
+                //particle->set_init(true);
 
-                if (!list_p->empty()) {
-                    particle = list_p->back();
-                    list_p->pop_back();
+                if (prev_part != nullptr) {
+                    particle = prev_part;
+                    prev_part = nullptr;
 
-                    this->get_parent()->store_particle(particle, list_p);
+                    this->get_parent()->store_particle(particle, prev_part);
                 }
             } else if (this->_next[0]->get_type() == ParticleT) {
-                list_p->push_back(this->_next[0]);
-                this->_next[0]->update_cell(false);
+                prev_part = this->_next[0];
+
+                /*if (particle->get_init()) {
+                    particle->set_parent(this);
+                    particle->update_cell(true);
+                    particle->set_parent(nullptr);
+                }*/
 
                 /**< clear precedent pointers */
                 this->_next.clear();
-                list_p->back()->set_parent(nullptr);
+                this->set_mass(0.0f);
+                this->set(MASS_POS, Type());
+                prev_part->set_parent(nullptr);
 
                 this->subdivide_tree();
-                this->store_particle(particle, list_p);
+                this->store_particle(particle, prev_part);
             } else {
-                this->get_next()[cell_idx_1]->store_particle(particle, list_p);
+                int cell_idx_1 = find_cell_idx(this->_center, particle->get(POS));
+
+                particle->set_parent(this);
+                particle->update_cell(true);
+                particle->set_parent(nullptr);
+
+                this->get_next()[cell_idx_1]->store_particle(particle, prev_part);
             }
         }
 
@@ -498,6 +531,12 @@ namespace Tree {
             float norm = tmp.norm();
 
             particle->set(LOAD, particle->get(LOAD) + tmp*(G*particle->get_mass()*this->_m)/tmp.norm());
+
+            if (isnan(particle->get(LOAD).x))
+                cout << "coucou x" << endl;
+
+            if (isnan(particle->get(LOAD).y))
+                cout << "coucou y" << endl;
         }
 
         /**
@@ -517,9 +556,6 @@ namespace Tree {
             }
 
             this->_next.clear();
-
-            this->set_mass(0.0f);
-            this->_mass_pos = Type();
         }
 
         Type _center;                            /**< @var vector position of the center of the given cell */

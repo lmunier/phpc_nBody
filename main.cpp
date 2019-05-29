@@ -62,20 +62,21 @@ void generate_data(Cell<Type>* root, Type vec) {
             z_rnd -= SHIFT;
 #endif
 
-        // Initialize quadtree/octree
+        /**< Initialize quadtree/octree */
         if(root->get_parent() == root) {
             root->subdivide_tree();
             root->set_parent(nullptr);
         }
 
-        // Create new particle
+        /**< Create new particle */
 #if NB_DIM == DIM_2
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd));
 #elif NB_DIM == DIM_3
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
 #endif
 
-        root->store_particle(new_particle, &other_particle);
+        new_particle->set_init(true);
+        root->store_particle(new_particle, nullptr);
     }
 }
 
@@ -165,30 +166,36 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
 
 template <typename Type>
 void update_particles(AbstractType<Type>* root, int iter){
-    vector< AbstractType<Type>* > other_particle{};
-    auto next = root->get_next();
-
-    for (auto it = next.begin(); it != next.end(); ++it) {
-        if ((*it) == nullptr || (*it)->get_parent() == nullptr) {
+    for (auto n : root->get_next()) {
+        if (n == nullptr) {
             return;
-        } else if (!(*it)->is_updated(iter)) {
-            if ((*it)->get_type() == ParticleT) {
-                (*it)->update_vel_pos();
-
-                if ((*it)->is_out_boundaries()) {
-                    (*it)->update_cell(false);
-
-                    if ((*it)->update_tree() == -1)
-                        delete (*it);
-                }
+        } else if (!n->is_updated(iter)) {
+            if (n->get_type() == ParticleT) {
+                n->update_vel_pos();
 
 #ifdef PRINT
-                if ((*it) != nullptr && (*it)->get_parent() != nullptr)
-                    generate_file(*it, 1000 * iter * DELTA_T);
+                if (n != nullptr)
+                    generate_file(n, 1000 * iter * DELTA_T);
 #endif
-            } else if ((*it)->get_type() == CellT && !(*it)->get_next().empty()) {
-                update_particles(*it, iter);
+            } else if (n->get_type() == CellT) {
+                update_particles(n, iter);
             }
+        }
+    }
+}
+
+template <typename Type>
+void update_tree_cell(AbstractType<Type>* root){
+    for (auto n : root->get_next()) {
+        if (n == nullptr || n->get_parent() == nullptr) {
+            return;
+        } else if (n->get_type() == ParticleT) {
+            if (n->is_out_boundaries()) {
+                if (n->update_tree() == -1)
+                    delete n;
+            }
+        } else if (n->get_type() == CellT) {
+            update_tree_cell(n);
         }
     }
 }
@@ -208,6 +215,7 @@ void barnes_hut(Type vec_dim) {
     for (int i = 1; i <= ITERATIONS; i++) {
         update_load(root);
         update_particles(root, i);
+        update_tree_cell(root);
     }
 }
 
