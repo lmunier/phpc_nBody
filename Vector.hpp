@@ -75,20 +75,7 @@ public:
     }
 
     /**
-     * Override -= to compute on vector2<Type>.
-     *
-     * @param vec vector to subtract to the given vector
-     * @return given vector minus vec argument
-     */
-    /*Vector2<Type> operator-= (Vector2 vec) {
-        this->x -= vec.x;
-        this->y -= vec.y;
-
-        return *this;
-    }*/
-
-    /**
-     * Override - to compute on vector2<Type>.
+     * Override - to compute on vector2<Type>. Avoid having a too small vector which reach to segfault.
      *
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
@@ -106,19 +93,6 @@ public:
 
         return tmp;
     }
-
-    /**
-     * Override += to compute on vector2<Type>.
-     *
-     * @param vec vector to subtract to the given vector
-     * @return given vector minus vec argument
-     */
-    /*Vector2<Type> operator+= (Vector2 vec) {
-        this->x += vec.x;
-        this->y += vec.y;
-
-        return *this;
-    }*/
 
     /**
      * Override + to compute on vector2<Type>.
@@ -227,21 +201,7 @@ public:
     }
 
     /**
-     * Override -= to compute on vector3<Type>.
-     *
-     * @param vec vector to subtract to the given vector
-     * @return given vector minus vec argument
-     */
-    /*Vector3<Type> operator-= (Vector3 vec) {
-        this->x -= vec.x;
-        this->y -= vec.y;
-        this->z -= vec.z;
-
-        return *this;
-    }*/
-
-    /**
-     * Override - to compute on vector3<Type>.
+     * Override - to compute on vector3<Type>. Avoid having a too small vector which reach to segfault.
      *
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
@@ -263,20 +223,6 @@ public:
 
         return tmp;
     }
-
-    /**abs(
-     * Override += to compute on vector3<Type>.
-     *
-     * @param vec vector to subtract to the given vector
-     * @return given vector minus vec argument
-     */
-    /*Vector3<Type> operator+= (Vector3 vec) {
-        this->x += vec.x;
-        this->y += vec.y;
-        this->z += vec.z;
-
-        return *this;
-    }*/
 
     /**
      * Override + to compute on vector3<Type>.

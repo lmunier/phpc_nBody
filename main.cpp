@@ -63,9 +63,9 @@ void generate_data(Cell<Type>* root, Type vec) {
 #endif
 
         // Initialize quadtree/octree
-        if(root->_prev == root) {
+        if(root->get_parent() == root) {
             root->subdivide_tree();
-            root->_prev = nullptr;
+            root->set_parent(nullptr);
         }
 
         // Create new particle
@@ -164,28 +164,31 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
 #endif
 
 template <typename Type>
-void update_particles(AbstractType<Type>* root, int millis_time){
+void update_particles(AbstractType<Type>* root, int iter){
     vector< AbstractType<Type>* > other_particle{};
+    auto next = root->get_next();
 
-    for (auto n : root->get_next()) {
-        if (n == nullptr) {
+    for (auto it = next.begin(); it != next.end(); ++it) {
+        if ((*it) == nullptr || (*it)->get_parent() == nullptr) {
             return;
-        } else if (n->get_type() == ParticleT) {
-            n->update_vel_pos();
+        } else if (!(*it)->is_updated(iter)) {
+            if ((*it)->get_type() == ParticleT) {
+                (*it)->update_vel_pos();
 
-            if (n->is_out_boundaries()) {
-                n->update_cell(false);
+                if ((*it)->is_out_boundaries()) {
+                    (*it)->update_cell(false);
 
-                if (n->update_tree() == -1)
-                    delete n;
-            }
+                    if ((*it)->update_tree() == -1)
+                        delete (*it);
+                }
 
 #ifdef PRINT
-            if (n != nullptr)
-                generate_file(n, millis_time);
+                if ((*it) != nullptr && (*it)->get_parent() != nullptr)
+                    generate_file(*it, 1000 * iter * DELTA_T);
 #endif
-        } else if (n->get_type() == CellT && !n->get_next().empty()) {
-            update_particles(n, millis_time);
+            } else if ((*it)->get_type() == CellT && !(*it)->get_next().empty()) {
+                update_particles(*it, iter);
+            }
         }
     }
 }
@@ -199,12 +202,12 @@ void update_particles(AbstractType<Type>* root, int millis_time){
 template <typename Type>
 void barnes_hut(Type vec_dim) {
     auto root = new Cell<Type>(Type(), vec_dim, Type());
-    root->_prev = root;
+    root->set_parent(root);
     generate_data(root, Type());
 
-    for (int i = 0; i < ITERATIONS; i++) {
+    for (int i = 1; i <= ITERATIONS; i++) {
         update_load(root);
-        update_particles(root, 1000 * i * DELTA_T);
+        update_particles(root, i);
     }
 }
 

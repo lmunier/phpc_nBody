@@ -1,7 +1,7 @@
 /**
  * @file Tree.hpp
  * @author Munier Louis
- * @date 27.05.19
+ * @date 29.05.19
  * @version 1.0
  *
  * Tree file to combine both Particle and Cell class in the same AbstractType. It is use to have vector array with both
@@ -52,49 +52,57 @@ namespace Tree {
         virtual my_type get_type() = 0;
 
         /**
-         * Destructor function to be override in child class. It serves as a model.
+         * Destructor function to safely delete all pointers in this class.
          */
-        virtual ~AbstractType() = default;
+        virtual ~AbstractType() { delete this->_parent; };
 
         /**
          * Return the mass of the given particle/cell.
          *
-         * @return _m member variable of the given particle
+         * @return _m attribute of the given particle
          */
-        float get_mass() {
-            return this->_m;
-        }
+        float get_mass() { return this->_m; }
+
+        virtual bool get_state() {};
+
+        AbstractType<Type>* get_parent() { return this->_parent; }
 
         /**
-         * Surcharge setting member variable value of one of the following properties for a given particle :
-         * - mass
+         * Set the new _m attribute value
          *
-         * @param p enum value of the property
-         * @param mass new float value to set the member variable
+         * @param mass new float value to set the attribute
          */
-        void set_mass(float mass) {
-            this->_m = mass;
-        }
+        void set_mass(float mass) { this->_m = mass; }
+
+        virtual void set_state(bool state) {};
+
+        /**
+         * Set the new _parent attribute value
+         *
+         * @param parent new pointer on AbstractType<Type> value to set the attribute
+         */
+        void set_parent(AbstractType<Type>* parent) { this->_parent = parent; }
 
         virtual Type get(property p) = 0;
-        virtual AbstractType<Type>* get_parent() {};
         virtual void set(property p, Type vec) {};
-        virtual void set_parent(AbstractType<Type>*) {};
         virtual void compute_load(AbstractType<Type>* particle) = 0;
         virtual void update_vel_pos() {};
         virtual bool is_out_boundaries() {};
         virtual void update_cell(bool add) {};
         virtual int update_tree() {};
+        virtual bool is_updated(int iteration) {};
 
         virtual void subdivide_tree() {};
         virtual void store_particle(AbstractType<Type>* particle, vector< AbstractType<Type>* > *list_p) {};
         virtual void del_level() {};
-        virtual AbstractType<Type>* get_prev() {};
 
         virtual vector< AbstractType<Type>* > get_next() {};
         virtual void clear_next() {};
+        virtual void set_prev(AbstractType<Type>* previous) {};
 
-        float _m = 0.0f;            /**< @var mass of the given particle/cell */
+
+        float _m = 0.0f;                            /**< @var mass of the given particle/cell */
+        AbstractType<Type>* _parent = nullptr;      /**< @var parent of the given particle/cell */
     };
 
     /**
@@ -117,11 +125,12 @@ namespace Tree {
         }
 
         /**
-         * Destructor to correctly delete a given particle.
+         * Destructor to safely delete a given particle.
          */
         ~Particle() override {
             delete this->_parent;
         }
+
         /**
          * Return the type of the given class.
          *
@@ -130,13 +139,13 @@ namespace Tree {
         my_type get_type() override { return ParticleT;}
 
         /**
-         * Return one of the following properties of the given particle :
+         * Return one of the following attribute of the given particle :
          * - position
          * - velocity
          * - load
          *
-         * @param p enum value of the property
-         * @return desired property of the given particle
+         * @param p enum value of the attribute
+         * @return desired attribute of the given particle
          */
         Type get(property p) override {
             switch (p) {
@@ -151,18 +160,16 @@ namespace Tree {
             }
         }
 
-        AbstractType<Type>* get_parent() {
-            return this->_parent;
-        }
+        bool get_state() override { return this->_state; }
 
         /**
-         * Set member variable value of one of the following properties for a given particle :
+         * Set attribute value of one of the following properties for a given particle :
          * - position
          * - velocity
          * - load
          *
-         * @param p enum value of the property
-         * @param vec new vector value to set the member variable
+         * @param p enum value of the attribute
+         * @param vec new vector value to set the attribute
          */
         void set(property p, Type vec) override {
             switch (p) {
@@ -180,9 +187,7 @@ namespace Tree {
             }
         }
 
-        void set_parent(AbstractType<Type>* parent) {
-            this->_parent = parent;
-        }
+        void set_state(bool state) override { this->_state = state; }
 
         /**
          * Compute the load vector between two particles to update the one passed in argument.
@@ -195,7 +200,6 @@ namespace Tree {
 
             particle->set(LOAD, particle->get(LOAD) + tmp*(G*particle->get_mass()*this->get_mass())/tmp.norm());
         }
-
 
         /**
          * Update velocity and position of a given particle for a given load on it. Reset load after update.
@@ -241,7 +245,7 @@ namespace Tree {
          * @param add boolean value to add or remove properties of the particle
          */
         void update_cell(bool add) override {
-            auto head = this->_parent;
+            auto head = this->get_parent();
 
             do {
                 if (add) {
@@ -249,19 +253,19 @@ namespace Tree {
                                         / (head->get_mass() + this->get_mass()));
                     head->set_mass(head->get_mass() + this->get_mass());
                 } else {
+                    /**< Avoid having a division by zero */
                     if (abs(head->get_mass() - this->get_mass()) < EPSILON) {
                         head->set(MASS_POS, head->get(CENTER));
                         head->set_mass(0.0f);
                     } else {
-                        head->set(MASS_POS,
-                                  (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
-                                  / (head->get_mass() - this->get_mass()));
+                        head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
+                                            / (head->get_mass() - this->get_mass()));
                         head->set_mass(head->get_mass() - this->get_mass());
                     }
                 }
 
-                head = head->get_prev();
-            }while(head != nullptr);
+                head = head->get_parent();
+            } while(head != nullptr);
         }
 
         /**
@@ -278,7 +282,7 @@ namespace Tree {
             this->_parent->clear_next();
 
             /**< parent of the particle go back from one level */
-            this->_parent = this->_parent->get_prev();
+            this->_parent = this->_parent->get_parent();
 
             /**< Check for empty level */
             if (this->is_out_boundaries()) {
@@ -293,24 +297,26 @@ namespace Tree {
                 if (nb_particles == 0) {
                     this->_parent->del_level();
                 }
-
             }
 
             /**< continue to go up in level to find right cell for our particle */
             while(this->is_out_boundaries()) {
                 this->update_cell(false);
-                this->_parent = this->_parent->get_prev();
+                this->_parent = this->_parent->get_parent();
 
                 if (this->_parent == nullptr)
                     return -1;
             }
 
             this->_parent->store_particle(this, &other_particle);
+            this->_state = !this->_state;
             return 0;
         }
 
+        bool is_updated(int iteration) { return this->_state == iteration % 2; }
+
     private:
-        AbstractType<Type>* _parent = nullptr;
+        bool _state = false;
 
         Type _pos;                  /**< @var position of the given particle */
         Type _vel;                  /**< @var velocity of the given particle */
@@ -337,16 +343,19 @@ namespace Tree {
             _center(center), _size(dim), _mass_pos(mass_pos) {}
 
         /**
-         * Destructor to correctly delete all pointer in the Cell element.
+         * Destructor to safely delete all pointer in the Cell element.
          */
         ~Cell() override{
-            this->_prev = nullptr;
-            delete this->_prev;
+            this->set_parent(nullptr);
+            delete this->get_parent();
 
             for (auto n : this->_next)
                 delete n;
 
             this->_next.clear();
+
+            this->set_mass(0.0f);
+            this->_mass_pos = Type();
         }
 
         /**
@@ -357,13 +366,13 @@ namespace Tree {
         my_type get_type() override { return CellT;}
 
         /**
-         * Return one of the following properties of the given particle :
+         * Return one of the following attribute of the given particle :
          * - position
          * - velocity
          * - load
          *
-         * @param p enum value of the property
-         * @return desired property of the given particle
+         * @param p enum value of the attribute
+         * @return desired attribute of the given particle
          */
         Type get(property p) override {
             switch (p) {
@@ -378,10 +387,6 @@ namespace Tree {
             }
         }
 
-        AbstractType<Type>* get_prev() override {
-            return this->_prev;
-        }
-
         vector< AbstractType<Type>* > get_next() override {
             return this->_next;
         }
@@ -391,13 +396,13 @@ namespace Tree {
         }
 
         /**
-         * Set member variable value of one of the following properties for a given particle :
+         * Set attribute value of one of the following properties for a given particle :
          * - position
          * - velocity
          * - load
          *
-         * @param p enum value of the property
-         * @param vec new vector value to set the member variable
+         * @param p enum value of the attribute
+         * @param vec new vector value to set the attribute
          */
         void set(property p, Type vec) override {
             switch (p) {
@@ -416,7 +421,7 @@ namespace Tree {
         }
 
         /**
-         * Subdivide a node in 2^NB_DIM sub-cells and fill _next member variable with a pointer to each sub-cell.
+         * Subdivide a node in 2^NB_DIM sub-cells and fill _next attribute with a pointer to each sub-cell.
          */
         void subdivide_tree() override {
             bool y = true, z = false;
@@ -442,7 +447,7 @@ namespace Tree {
                 /**< Fill _next vector array with each new sub-cell */
                 auto next = new Cell<Type>(center, size, center);
                 this->_next.push_back(next);
-                next->_prev = this;
+                next->set_parent(this);
             }
         }
 
@@ -466,7 +471,7 @@ namespace Tree {
                     particle = list_p->back();
                     list_p->pop_back();
 
-                    this->_prev->store_particle(particle, list_p);
+                    this->get_parent()->store_particle(particle, list_p);
                 }
             } else if (this->_next[0]->get_type() == ParticleT) {
                 list_p->push_back(this->_next[0]);
@@ -501,8 +506,15 @@ namespace Tree {
          * @param p pointer of the particle to be deleted
          */
         void del_level() override {
-            for (auto n : this->_next)
-                delete n;
+            while (!this->_next.empty()) {
+                auto next = this->_next.back();
+
+                next->set_parent(nullptr);
+                delete next->get_parent();
+
+                this->_next.pop_back();
+                delete next;
+            }
 
             this->_next.clear();
 
@@ -514,7 +526,6 @@ namespace Tree {
         Type _size;                              /**< @var vector size of the given cell */
         Type _mass_pos;                          /**< @var vector position of the center of mass of the given cell */
 
-        Cell* _prev;                             /**< @var pointer on the parent cell*/
         vector< AbstractType<Type>*> _next{};    /**< @var vector list of the following cells or a particle */
     };
 }
