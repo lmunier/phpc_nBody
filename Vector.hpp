@@ -1,7 +1,7 @@
 /**
  * @file Vector.hpp
  * @author Munier Louis
- * @date 27.05.19
+ * @date 30.05.19
  * @version 1.0
  *
  * 2D/3D Vector class to have a minimal implementation of vector with some functions.
@@ -110,6 +110,21 @@ public:
     }
 
     /**
+     * Surcharge override + to compute on vector3<Type>.
+     *
+     * @param scalar Type to add to the given vector
+     * @return given vector plus scalar argument on each dimension
+     */
+    Vector2<Type> operator+ (Type scalar) {
+        Vector2 tmp = Vector2();
+
+        tmp.x = this->x + scalar;
+        tmp.y = this->y + scalar;
+
+        return tmp;
+    }
+
+    /**
      * Override * to compute on vector2<Type>.
      *
      * @param Type value to multiply the given vector
@@ -118,8 +133,8 @@ public:
     Vector2<Type> operator* (Type scalar) {
         Vector2 tmp = Vector2();
 
-        tmp.x = scalar*this->x;
-        tmp.y = scalar*this->y;
+        tmp.x = scalar * this->x;
+        tmp.y = scalar * this->y;
 
         return tmp;
     }
@@ -133,14 +148,8 @@ public:
     Vector2<Type> operator/ (Type scalar) {
         Vector2 tmp = Vector2();
 
-        tmp.x = this->x/scalar;
-        tmp.y = this->y/scalar;
-
-        if (isinf(tmp.x))
-            cout << "Coucou vector inf x" << endl;
-
-        if (isinf(tmp.y))
-            cout << "Coucou vector inf y" << endl;
+        tmp.x = this->x / scalar;
+        tmp.y = this->y / scalar;
 
         return tmp;
     }
@@ -242,6 +251,22 @@ public:
         tmp.x = this->x + vec.x;
         tmp.y = this->y + vec.y;
         tmp.z = this->z + vec.z;
+
+        return tmp;
+    }
+
+    /**
+     * Surcharge override + to compute on vector3<Type>.
+     *
+     * @param scalar Type to add to the given vector
+     * @return given vector plus scalar argument on each dimension
+     */
+    Vector3<Type> operator+ (Type scalar) {
+        Vector3 tmp = Vector3();
+
+        tmp.x = this->x + scalar;
+        tmp.y = this->y + scalar;
+        tmp.z = this->z + scalar;
 
         return tmp;
     }

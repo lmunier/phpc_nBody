@@ -244,6 +244,7 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
  */
 int main(int argc, char *argv[]) {
     auto start = high_resolution_clock::now();
+
 #if NB_DIM == DIM_2
     int width = SIDE, height = SIDE;
         barnes_hut(Vector2f(width, height));

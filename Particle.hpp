@@ -134,15 +134,23 @@ namespace Tree {
         }
 
         /**
-         * Compute the load vector between two particles to update the one passed in argument.
+         * Compute the load vector between two particles to update the one passed in argument. Two different types of
+         * load are available by changing a define in the constants.hpp file :
+         * - General gravity load
+         * - Lennard Jones potential (with Argon parameters)
          *
          * @param particle where the load is applied
          */
         void compute_load(AbstractType<Type> *particle) override {
             Type tmp = this->get(POS) - particle->get(POS);
-            float norm = max(tmp.norm(), (float) EPSILON);
+            float d = max(tmp.norm(), EPSILON);
 
-            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / tmp.norm());
+#if LOAD_TYPE == 0
+            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
+#elif LOAD_TYPE == 1
+            float sigma_d = POT_ZERO_DISTANCE / d;
+            particle->set(LOAD, particle->get(LOAD) +  4 * POT_WELL * (pow(sigma_d, 12) - 2*pow(sigma_d, 6)));
+#endif
         }
 
         /**
