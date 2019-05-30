@@ -40,8 +40,8 @@ using namespace std::chrono;
 #define DIM_3 3                /**< number of dimension in 3D */
 #define NB_DIM DIM_3           /**< number of dimension chosen for the project */
 
-#define NB_PARTICLES 10         /**< number of particles for the project */
-#define SIDE 100               /**< side of the area considered for the project */
+#define NB_PARTICLES 10000         /**< number of particles for the project */
+#define SIDE 100000               /**< side of the area considered for the project */
 #define SHIFT SIDE/3.0         /**< shift each particles position to unbalanced probability of particles position */
 #define MASS_MAX 10            /**< maximum of mass value for a particle */
 
@@ -55,10 +55,9 @@ enum property {
     POS,          /**< enum value for position property */
     VEL,          /**< enum value for velocity property */
     LOAD,         /**< enum value for load property */
-    MASS,         /**< enum value for mass property */
-    MASS_POS,     /**< enum value for center of mass position property */
-    CENTER,       /**< enum value for center of cell property */
     DIM,          /**< enum value for dimension of cell property */
+    CENTER,       /**< enum value for center of cell property */
+    MASS_POS,     /**< enum value for center of mass position property */
 };
 
 #endif //PROJECT_CONSTANTS_HPP
