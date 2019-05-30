@@ -126,13 +126,9 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
                 n->compute_load(part_loaded);
         } /** If next element is a cell */
         else {
-            if (part_loaded != nullptr) {
-                /** Compute parameter to know if particles are too far */
-                float theta = n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm();
-
-                if (theta < BH_THETA)
-                    n->compute_load(part_loaded);
-            } else
+            if (part_loaded != nullptr && (n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
+                n->compute_load(part_loaded);
+            else
                 update_load(n, part_loaded);
         }
     }
