@@ -1,10 +1,33 @@
 /**
  * @file main.cpp
  * @author Munier Louis
- * @date 27.05.19
+ * @date 30.05.19
  * @version 1.0
  *
  * Main file of the nBody project.
+ *
+ * @mainpage N-Body project
+ *
+ * Project in the case of the course of Parallel and High Performance Computing at EPFL - Ecole Polytechnique Fédérale
+ * de Lausanne.
+ *
+ * @section Description
+ *
+ * The n-body problem aims at simulating a dynamical system of particles under the influence of physical forces. We’ll
+ * restrain on the gravity field applied on celestial bodies :
+ * @f[ F_{ij} = \frac{G m_i m_j (q_j - q_i)}{|| q_j - q_i ||} @f]
+ *
+ * where @f$ G @f$ is the gravitational constant, @f$ m_i @f$ and @f$ m_j @f$ the masses of the @f$ i @f$-th and
+ * @f$j@f$-th bodies and @f$ q_i @f$ and @f$ q_j @f$ their positions.
+ *
+ * @section Implementation
+ *
+ * The solution is implemented using Barnes-Hut algorithm and quadtree/octree data-structure. The particularity is that
+ * the user can choose differents parameters as define :
+ * - NB_DIM : set at DIM_2 or DIM_3 to choose between 2D and 3D problem solution
+ * - NB_PARTICLES : number of particles
+ * - PRINT : save solution in csv file, at each time-step, to display solution animation in programs (e.g. paraview)
+ * - DELTA_T : time-step of each iteration
  */
 
 /**
@@ -28,7 +51,6 @@ using namespace Tree;
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param root pointer to initial Cell of the tree to construct
  * @param vec vector to give the Type of the vector to the template function
- * @param list_particles pointer on a list of all the pointers on generated particles (if PRINT defined) to generate csv
  */
 template <typename Type>
 void generate_data(Cell<Type>* root, Type vec) {
@@ -44,7 +66,8 @@ void generate_data(Cell<Type>* root, Type vec) {
     uniform_real_distribution<float> dist_y(-p_y, p_y);
 
     for (int i = 0; i < NB_PARTICLES; i++) {
-        // Generate random coordinate for a new particle and shift it if it stays in boundaries to stress application
+        /** Generate random coordinate for a new particle and shift it if it stays in boundaries
+         * to stress application */
         x_rnd = dist_x(rd);
         if(fabs(x_rnd - SHIFT) < p_x)
             x_rnd -= SHIFT;
@@ -62,13 +85,13 @@ void generate_data(Cell<Type>* root, Type vec) {
             z_rnd -= SHIFT;
 #endif
 
-        /**< Initialize quadtree/octree */
+        /** Initialize quadtree/octree */
         if(root->get_parent() == root) {
             root->subdivide_tree();
             root->set_parent(nullptr);
         }
 
-        /**< Create new particle */
+        /** Create new particle */
 #if NB_DIM == DIM_2
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd));
 #elif NB_DIM == DIM_3
@@ -81,7 +104,7 @@ void generate_data(Cell<Type>* root, Type vec) {
 }
 
 /**
- * Update the load applied to a particle.
+ * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param head pointer to the current cell of the tree
@@ -136,10 +159,10 @@ int find_cell_idx(Type origin, Type particle) {
 }
 
 /**
- * If PRINT is defined, generate a csv file to display animation of the result.
+ * If PRINT is defined, generate a csv file to display animation of the result in external software (e.g. paraview).
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param list_particles pointer on a list of pointers on all the particles to write in csv file
+ * @param particle pointer on the particle to write in csv file
  * @param millis_time timestep to change filename and save chronology
  */
 #ifdef PRINT
@@ -150,7 +173,7 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
 
     csv_file.open(filename, ios::app);
 
-    /**< Check if file is empty */
+    /** Check if file is empty to write the title of each column */
     if (csv_file.tellp() == 0) {
 #if NB_DIM == DIM_2
         csv_file << "x,y\n";
@@ -164,26 +187,38 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
 }
 #endif
 
+/**
+ * Update position and velocity for each particle. Generate a csv file with all the position if needed.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param root pointer on the node of the previous cell
+ * @param iter current iteration of the solution
+ */
 template <typename Type>
 void update_particles(AbstractType<Type>* root, int iter){
     for (auto n : root->get_next()) {
         if (n == nullptr) {
             return;
-        } else if (!n->is_updated(iter)) {
-            if (n->get_type() == ParticleT) {
-                n->update_vel_pos();
+        } else if (n->get_type() == ParticleT) {
+            n->update_vel_pos();
 
 #ifdef PRINT
-                if (n != nullptr)
-                    generate_file(n, 1000 * iter * DELTA_T);
+            if (n != nullptr)
+                generate_file(n, 1000 * iter * DELTA_T);
 #endif
-            } else if (n->get_type() == CellT) {
-                update_particles(n, iter);
-            }
+        } else if (n->get_type() == CellT) {
+            update_particles(n, iter);
         }
     }
 }
 
+/**
+ * Update the current quadtree/octree datastructure with the new position of each particle if they pass to an other
+ * cell.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param root pointer on the node of the previous cell
+ */
 template <typename Type>
 void update_tree_cell(AbstractType<Type>* root){
     auto next = root->get_next();
@@ -231,11 +266,11 @@ void barnes_hut(Type vec_dim) {
 int main(int argc, char *argv[]) {
     auto start = high_resolution_clock::now();
 #if NB_DIM == DIM_2
-        int width = SIDE, height = SIDE;
+    int width = SIDE, height = SIDE;
         barnes_hut(Vector2f(width, height));
 #elif NB_DIM == DIM_3
-        int width = SIDE, height = SIDE, depth = SIDE;
-        barnes_hut(Vector3f(width, height, depth));
+    int width = SIDE, height = SIDE, depth = SIDE;
+    barnes_hut(Vector3f(width, height, depth));
 #endif
     auto stop = high_resolution_clock::now();
 
