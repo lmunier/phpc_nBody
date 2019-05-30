@@ -39,8 +39,8 @@
  * @namespace use Tree to simplify code implementation
  */
 #include "constants.hpp"
-#include "Vector.hpp"
-#include "Tree.hpp"
+#include "Cell.hpp"
+#include "Particle.hpp"
 
 using namespace std;
 using namespace Tree;
@@ -55,8 +55,8 @@ using namespace Tree;
 template <typename Type>
 void generate_data(Cell<Type>* root, Type vec) {
     float p_m = MASS_MAX;
-    float x_rnd, p_x = 0.5*root->_size.x;
-    float y_rnd, p_y = 0.5*root->_size.y;
+    float x_rnd, p_x = 0.5*root->get(DIM).x;
+    float y_rnd, p_y = 0.5*root->get(DIM).y;
 
     vector< AbstractType<Type>* > other_particle{};
 
@@ -77,7 +77,7 @@ void generate_data(Cell<Type>* root, Type vec) {
             y_rnd -= SHIFT;
 
 #if NB_DIM == DIM_3
-        float z_rnd, p_z = 0.5*root->_size.z;
+        float z_rnd, p_z = 0.5*root->get(DIM).z;
         uniform_real_distribution<float> dist_z(-p_z, p_z);
 
         z_rnd = dist_z(rd);
@@ -98,7 +98,6 @@ void generate_data(Cell<Type>* root, Type vec) {
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
 #endif
 
-        new_particle->set_init(true);
         root->store_particle(new_particle, nullptr);
     }
 }
@@ -135,30 +134,76 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
 }
 
 /**
- * Find the index of the cell in the _next dynamic array where the particle should be stored.
+ * Update position and velocity for each particle. Generate a csv file with all the position if needed.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param origin center of the parent cell
- * @param particle current particle to store
- * @return int index of the cell where the particle should be stored
+ * @param root pointer on the node of the previous cell
+ * @param iter current iteration of the solution
  */
 template <typename Type>
-int find_cell_idx(Type origin, Type particle) {
-    int idx = 0;
-    Type tmp_vec = particle - origin;
+void update_particles_pos(AbstractType<Type>* root, int iter){
+    for (auto n : root->get_next()) {
+        /** If next element is empty */
+        if (n == nullptr) {
+            return;
+        } else if (n->get_type() == ParticleT) {
+            n->update_vel_pos();
 
-    if(tmp_vec.x > 0)
-        idx += 1;
-
-    if(tmp_vec.y < 0)
-        idx += 2;
-
-#if NB_DIM == DIM_3
-    if(tmp_vec.z < 0)
-        idx += 4;
+#ifdef PRINT
+            if (n != nullptr)
+                generate_file(n, 1000 * iter * DELTA_T);
 #endif
+        } else if (n->get_type() == CellT) {
+            update_particles_pos(n, iter);
+        }
+    }
+}
 
-    return idx;
+/**
+ * Update the current quadtree/octree datastructure with the new position of each particle if they pass to an other
+ * cell.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param root pointer on the node of the previous cell
+ */
+template <typename Type>
+void update_particles_tree(AbstractType<Type>* root){
+    auto next = root->get_next();
+
+    for (auto it = next.begin(); it != next.end(); ++it) {
+        /** If next element is empty or is already deleted */
+        if ((*it) == nullptr || !(*it)->get_state()) {
+            return;
+        } /** If next element is a particle */
+        else if ((*it)->get_type() == ParticleT) {
+            if ((*it)->is_out_boundaries()) {
+                if ((*it)->update_tree() == -1)
+                    delete *it;
+            }
+        } /** If next element is a cell */
+        else if ((*it)->get_type() == CellT) {
+            update_particles_tree(*it);
+        }
+    }
+}
+
+/**
+ * Barnes hut part of the algorithm.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param vec_dim vector of the dimensions of the overall area where particles are generated
+ */
+template <typename Type>
+void barnes_hut(Type vec_dim) {
+    auto root = new Cell<Type>(Type(), vec_dim, Type());
+    root->set_parent(root);
+    generate_data(root, Type());
+
+    for (int i = 1; i <= ITERATIONS; i++) {
+        update_load(root);
+        update_particles_pos(root, i);
+        update_particles_tree(root);
+    }
 }
 
 /**
@@ -189,79 +234,6 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
     csv_file.close();
 }
 #endif
-
-/**
- * Update position and velocity for each particle. Generate a csv file with all the position if needed.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer on the node of the previous cell
- * @param iter current iteration of the solution
- */
-template <typename Type>
-void update_particles(AbstractType<Type>* root, int iter){
-    for (auto n : root->get_next()) {
-        /** If next element is empty */
-        if (n == nullptr) {
-            return;
-        } else if (n->get_type() == ParticleT) {
-            n->update_vel_pos();
-
-#ifdef PRINT
-            if (n != nullptr)
-                generate_file(n, 1000 * iter * DELTA_T);
-#endif
-        } else if (n->get_type() == CellT) {
-            update_particles(n, iter);
-        }
-    }
-}
-
-/**
- * Update the current quadtree/octree datastructure with the new position of each particle if they pass to an other
- * cell.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer on the node of the previous cell
- */
-template <typename Type>
-void update_tree_cell(AbstractType<Type>* root){
-    auto next = root->get_next();
-
-    for (auto it = next.begin(); it != next.end(); ++it) {
-        /** If next element is empty or is already deleted */
-        if ((*it) == nullptr || !(*it)->_state) {
-            return;
-        } /** If next element is a particle */
-        else if ((*it)->get_type() == ParticleT) {
-            if ((*it)->is_out_boundaries()) {
-                if ((*it)->update_tree() == -1)
-                    delete *it;
-            }
-        } /** If next element is a cell */
-        else if ((*it)->get_type() == CellT) {
-            update_tree_cell(*it);
-        }
-    }
-}
-
-/**
- * Barnes hut part of the algorithm.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param vec_dim vector of the dimensions of the overall area where particles are generated
- */
-template <typename Type>
-void barnes_hut(Type vec_dim) {
-    auto root = new Cell<Type>(Type(), vec_dim, Type());
-    root->set_parent(root);
-    generate_data(root, Type());
-
-    for (int i = 1; i <= ITERATIONS; i++) {
-        update_load(root);
-        update_particles(root, i);
-        update_tree_cell(root);
-    }
-}
 
 /**
  * Main function, compute time to solve problem and store size of the overall area where particle are studied.
