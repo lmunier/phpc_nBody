@@ -7,3 +7,6 @@ cmake-build-debug/
 
 # Excluding documentation
 doc/*
+
+# png
+*.png
