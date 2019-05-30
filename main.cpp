@@ -186,16 +186,18 @@ void update_particles(AbstractType<Type>* root, int iter){
 
 template <typename Type>
 void update_tree_cell(AbstractType<Type>* root){
-    for (auto n : root->get_next()) {
-        if (n == nullptr || n->get_parent() == nullptr) {
+    auto next = root->get_next();
+
+    for (auto it = next.begin(); it != next.end(); ++it) {
+        if ((*it) == nullptr || !(*it)->_state) {
             return;
-        } else if (n->get_type() == ParticleT) {
-            if (n->is_out_boundaries()) {
-                if (n->update_tree() == -1)
-                    delete n;
+        } else if ((*it)->get_type() == ParticleT) {
+            if ((*it)->is_out_boundaries()) {
+                if ((*it)->update_tree() == -1)
+                    delete *it;
             }
-        } else if (n->get_type() == CellT) {
-            update_tree_cell(n);
+        } else if ((*it)->get_type() == CellT) {
+            update_tree_cell(*it);
         }
     }
 }

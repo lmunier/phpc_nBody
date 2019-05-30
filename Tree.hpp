@@ -54,7 +54,10 @@ namespace Tree {
         /**
          * Destructor function to safely delete all pointers in this class.
          */
-        virtual ~AbstractType() { delete this->_parent; };
+        virtual ~AbstractType() {
+            this->_state = false;
+            delete this->_parent;
+        };
 
         /**
          * Return the mass of the given particle/cell.
@@ -101,6 +104,7 @@ namespace Tree {
         virtual void set_prev(AbstractType<Type>* previous) {};
 
 
+        bool _state = true;
         float _m = 0.0f;                            /**< @var mass of the given particle/cell */
         AbstractType<Type>* _parent = nullptr;      /**< @var parent of the given particle/cell */
     };
@@ -127,9 +131,7 @@ namespace Tree {
         /**
          * Destructor to safely delete a given particle.
          */
-        ~Particle() override {
-            delete this->_parent;
-        }
+        ~Particle() = default;
 
         /**
          * Return the type of the given class.
@@ -368,7 +370,7 @@ namespace Tree {
         /**
          * Destructor to safely delete all pointer in the Cell element.
          */
-        ~Cell() override{
+        ~Cell() {
             this->set_parent(nullptr);
             delete this->get_parent();
 
