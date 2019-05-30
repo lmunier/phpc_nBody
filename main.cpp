@@ -115,17 +115,24 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
     static AbstractType<Type>* root = head;
 
     for (auto n : head->get_next()) {
-        if (n == nullptr)
+        /** If next element is empty */
+        if (n == nullptr) {
             return;
+        } /** If next element is a particle */
         else if (n->get_type() == ParticleT) {
             if (part_loaded == nullptr)
                 update_load(root, n);
             else if (n != part_loaded)
                 n->compute_load(part_loaded);
-        } else {
-            if (part_loaded != nullptr && (n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
-                n->compute_load(part_loaded);
-            else
+        } /** If next element is a cell */
+        else {
+            if (part_loaded != nullptr) {
+                /** Compute parameter to know if particles are too far */
+                float theta = n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm();
+
+                if (theta < BH_THETA)
+                    n->compute_load(part_loaded);
+            } else
                 update_load(n, part_loaded);
         }
     }
@@ -197,6 +204,7 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
 template <typename Type>
 void update_particles(AbstractType<Type>* root, int iter){
     for (auto n : root->get_next()) {
+        /** If next element is empty */
         if (n == nullptr) {
             return;
         } else if (n->get_type() == ParticleT) {
@@ -224,14 +232,17 @@ void update_tree_cell(AbstractType<Type>* root){
     auto next = root->get_next();
 
     for (auto it = next.begin(); it != next.end(); ++it) {
+        /** If next element is empty or is already deleted */
         if ((*it) == nullptr || !(*it)->_state) {
             return;
-        } else if ((*it)->get_type() == ParticleT) {
+        } /** If next element is a particle */
+        else if ((*it)->get_type() == ParticleT) {
             if ((*it)->is_out_boundaries()) {
                 if ((*it)->update_tree() == -1)
                     delete *it;
             }
-        } else if ((*it)->get_type() == CellT) {
+        } /** If next element is a cell */
+        else if ((*it)->get_type() == CellT) {
             update_tree_cell(*it);
         }
     }

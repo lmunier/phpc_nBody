@@ -85,11 +85,11 @@ public:
 
         tmp.x = this->x - vec.x;
         if (abs(tmp.x) < EPSILON)
-            tmp.x = EPSILON;
+            tmp.x = 0.0f;
 
         tmp.y = this->y - vec.y;
         if (abs(tmp.y) < EPSILON)
-            tmp.y = EPSILON;
+            tmp.y = 0.0f;
 
         return tmp;
     }
@@ -217,15 +217,15 @@ public:
 
         tmp.x = this->x - vec.x;
         if (abs(tmp.x) < EPSILON)
-            tmp.x = EPSILON;
+            tmp.x = 0.0f;
 
         tmp.y = this->y - vec.y;
         if (abs(tmp.y) < EPSILON)
-            tmp.y = EPSILON;
+            tmp.y = 0.0f;
 
         tmp.z = this->z - vec.z;
         if (abs(tmp.z) < EPSILON)
-            tmp.z = EPSILON;
+            tmp.z = 0.0f;
 
         return tmp;
     }
