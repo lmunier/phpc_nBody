@@ -417,12 +417,12 @@ namespace Tree {
             return 0;
         }
 
-     private:
-         bool _init = false;         /**< initialization state of the given particle */
+    private:
+        bool _init = false;         /**< initialization state of the given particle */
 
-         Type _pos;                  /**< position of the given particle */
-         Type _vel;                  /**< velocity of the given particle */
-         Type _load;                 /**< load on the given particle */
+        Type _pos;                  /**< position of the given particle */
+        Type _vel;                  /**< velocity of the given particle */
+        Type _load;                 /**< load on the given particle */
     };
 
     /**
@@ -442,7 +442,7 @@ namespace Tree {
          * @param mass_pos center of mass of the given cell
          */
         explicit Cell(Type center = Type(), Type dim = Type(), Type mass_pos = Type()) :
-            _center(center), _size(dim), _mass_pos(mass_pos) {}
+                _center(center), _size(dim), _mass_pos(mass_pos) {}
 
         /**
          * Destructor to safely delete all pointer in the Cell element.

@@ -104,7 +104,7 @@ void generate_data(Cell<Type>* root, Type vec) {
 }
 
 /**
- * Update the load applied to a particle.
+ * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param head pointer to the current cell of the tree
@@ -207,16 +207,14 @@ void update_particles(AbstractType<Type>* root, int iter){
         /** If next element is empty */
         if (n == nullptr) {
             return;
-        } /** If next element is a particle */
-        else if (n->get_type() == ParticleT) {
+        } else if (n->get_type() == ParticleT) {
             n->update_vel_pos();
 
 #ifdef PRINT
             if (n != nullptr)
                 generate_file(n, 1000 * iter * DELTA_T);
 #endif
-        } /** If next element is a cell */
-        else if (n->get_type() == CellT) {
+        } else if (n->get_type() == CellT) {
             update_particles(n, iter);
         }
     }
@@ -279,11 +277,11 @@ void barnes_hut(Type vec_dim) {
 int main(int argc, char *argv[]) {
     auto start = high_resolution_clock::now();
 #if NB_DIM == DIM_2
-        int width = SIDE, height = SIDE;
+    int width = SIDE, height = SIDE;
         barnes_hut(Vector2f(width, height));
 #elif NB_DIM == DIM_3
-        int width = SIDE, height = SIDE, depth = SIDE;
-        barnes_hut(Vector3f(width, height, depth));
+    int width = SIDE, height = SIDE, depth = SIDE;
+    barnes_hut(Vector3f(width, height, depth));
 #endif
     auto stop = high_resolution_clock::now();
 
