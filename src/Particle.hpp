@@ -143,12 +143,12 @@ namespace Tree {
          */
         void compute_load(AbstractType<Type> *particle) override {
             Type tmp = this->get(POS) - particle->get(POS);
-            float d = max(tmp.norm(), EPSILON);
 
 #if LOAD_TYPE == 0
+            float d = max(tmp.norm(), EPSILON);
             particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
 #elif LOAD_TYPE == 1
-            float sigma_d = POT_ZERO_DISTANCE / d;
+            float sigma_d = POT_ZERO_DISTANCE / tmp.norm();
             particle->set(LOAD, particle->get(LOAD) +  4 * POT_WELL * (pow(sigma_d, 12) - 2*pow(sigma_d, 6)));
 #endif
         }

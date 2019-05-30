@@ -203,10 +203,15 @@ namespace Tree {
          * @param particle where the load is applied
          */
         void compute_load(AbstractType <Type> *particle) override {
-            Type tmp = this->_mass_pos - particle->get(POS);
-            float norm = tmp.norm();
+            Type tmp = this->get(MASS_POS) - particle->get(POS);
 
-            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->_m) / tmp.norm());
+#if LOAD_TYPE == 0
+            float d = max(tmp.norm(), EPSILON);
+            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
+#elif LOAD_TYPE == 1
+            float sigma_d = POT_ZERO_DISTANCE / tmp.norm();
+            particle->set(LOAD, particle->get(LOAD) +  4 * POT_WELL * (pow(sigma_d, 12) - 2*pow(sigma_d, 6)));
+#endif
         }
 
         /**

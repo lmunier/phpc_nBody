@@ -42,6 +42,10 @@
 #include "Cell.hpp"
 #include "Particle.hpp"
 
+#include <bits/stdc++.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 using namespace std;
 using namespace Tree;
 
@@ -141,7 +145,7 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
  * @param iter current iteration of the solution
  */
 template <typename Type>
-void update_particles_pos(AbstractType<Type>* root, int iter){
+void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir){
     for (auto n : root->get_next()) {
         /** If next element is empty */
         if (n == nullptr) {
@@ -151,10 +155,10 @@ void update_particles_pos(AbstractType<Type>* root, int iter){
 
 #ifdef PRINT
             if (n != nullptr)
-                generate_file(n, 1000 * iter * DELTA_T);
+                generate_file(n, 1000 * iter * DELTA_T, dir);
 #endif
         } else if (n->get_type() == CellT) {
-            update_particles_pos(n, iter);
+            update_particles_pos(n, iter, dir);
         }
     }
 }
@@ -194,14 +198,14 @@ void update_particles_tree(AbstractType<Type>* root){
  * @param vec_dim vector of the dimensions of the overall area where particles are generated
  */
 template <typename Type>
-void barnes_hut(Type vec_dim) {
+void barnes_hut(Type vec_dim, const string& dir) {
     auto root = new Cell<Type>(Type(), vec_dim, Type());
     root->set_parent(root);
     generate_data(root, Type());
 
     for (int i = 1; i <= ITERATIONS; i++) {
         update_load(root);
-        update_particles_pos(root, i);
+        update_particles_pos(root, i, dir);
         update_particles_tree(root);
     }
 }
@@ -215,9 +219,9 @@ void barnes_hut(Type vec_dim) {
  */
 #ifdef PRINT
 template <typename Type>
-void generate_file(AbstractType<Type>* particle, int millis_time) {
+void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
     ofstream csv_file;
-    string filename = "../tests/test_" + to_string(millis_time) + ".csv";
+    string filename = dir + "/out_" + to_string(millis_time) + ".csv";
 
     csv_file.open(filename, ios::app);
 
@@ -243,14 +247,21 @@ void generate_file(AbstractType<Type>* particle, int millis_time) {
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
+    int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
 
 #if NB_DIM == DIM_2
-    int width = SIDE, height = SIDE;
-        barnes_hut(Vector2f(width, height));
+    if (argv[1])
+        barnes_hut(Vector2f(width, height), argv[1]);
+    else
+        barnes_hut(Vector2f(width, height), "../output");
 #elif NB_DIM == DIM_3
-    int width = SIDE, height = SIDE, depth = SIDE;
-    barnes_hut(Vector3f(width, height, depth));
+    int depth = SIDE;
+    
+    if (argv[1])
+        barnes_hut(Vector3f(width, height, depth), argv[1]);
+    else
+        barnes_hut(Vector3f(width, height, depth), "../output");
 #endif
     auto stop = high_resolution_clock::now();
 
