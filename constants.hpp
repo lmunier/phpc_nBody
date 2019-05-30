@@ -1,7 +1,7 @@
 /**
  * @file constants.hpp
  * @author Munier Louis
- * @date 27.05.19
+ * @date 30.05.19
  * @version 1.0
  *
  * Constants file to have all the desired constants of the overall project.
@@ -9,21 +9,22 @@
 
 #ifndef PROJECT_CONSTANTS_HPP
 #define PROJECT_CONSTANTS_HPP
+
 /**
  * Different includes to have all the c++ functions/library needed.
  *
  * @namespace use std::chrono to simplify notation on time duration computing
  */
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <cstdlib>
-#include <cstdint>
-#include <random>
-#include <vector>
-#include <math.h>
+#include <iostream>            /**< input/output stream objects */
+#include <fstream>             /**< input/output stream class to operate on files */
+#include <string>              /**< string library manipulation */
+#include <cstdlib>             /**< C standard general utilities library */
+#include <cstdint>             /**< integer types */
+#include <random>              /**< introduces random number generation facilities */
+#include <vector>              /**< dynamic arrays */
+#include <math.h>              /**< different maths functions */
 
-#include <chrono>
+#include <chrono>              /**< deal with time */
 using namespace std::chrono;
 
 /**
