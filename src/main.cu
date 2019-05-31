@@ -244,6 +244,21 @@ void generate_file(AbstractType<Type>* particle, int millis_time, const string& 
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
+    /** Find/set the device. */
+    /** The test requires an architecture SM35 or greater (CDP capable). */
+    int cuda_device = findCudaDevice(argc, (const char **)argv);
+    cudaDeviceProp deviceProps;
+    checkCudaErrors(cudaGetDeviceProperties(&deviceProps, cuda_device));
+    int cdpCapable = (deviceProps.major == 3 && deviceProps.minor >= 5) || deviceProps.major >=4;
+
+    printf("GPU device %s has compute capabilities (SM %d.%d)\n", deviceProps.name, deviceProps.major, deviceProps.minor);
+
+    if (!cdpCapable)
+    {
+        std::cerr << "cdpQuadTree requires SM 3.5 or higher to use CUDA Dynamic Parallelism.  Exiting...\n" << std::endl;
+        exit(EXIT_SUCCESS);
+    }
+
     int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
 

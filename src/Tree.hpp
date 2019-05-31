@@ -52,6 +52,18 @@ namespace Tree {
             delete this->_parent;
         };
 
+        void *operator new(size_t len) {
+            void *ptr;
+            cudaMallocManaged(&ptr, len);
+            cudaDeviceSynchronize();
+            return ptr;
+        }
+
+        void operator delete(void *ptr) {
+            cudaDeviceSynchronize();
+            cudaFree(ptr);
+        }
+
         /**
          * State of the cell, if it is already deleted or not.
          *

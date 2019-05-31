@@ -12,6 +12,7 @@ SRCDIR=src
 OBJDIR=build
 BINDIR=.
 CXXFLAGS+= -I ./$(SRCDIR)/*.hpp
+CUDAFLAGS+= -I /usr/local/cuda-10.1/include/ -I /usr/local/cuda-10.1/samples/common/inc/
 
 SOURCES  := $(wildcard $(SRCDIR)/*.cu)
 INCLUDES := $(wildcard $(SRCDIR)/*.hpp)
