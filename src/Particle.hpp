@@ -14,13 +14,14 @@
  * @include constants.hpp which contains all the needed project's constants/includes
  * @include Vector.hpp custom library to have minimal vector implementation
  * @include Tree.hpp custom class to have mother class link
- *
- * @namespace std to simplify code implementation
  */
 #include "constants.hpp"
 #include "Vector.hpp"
 #include "Tree.hpp"
 
+/**
+ * @namespace std to simplify code implementation
+ */
 using namespace std;
 
 /**
@@ -137,7 +138,7 @@ namespace Tree {
          * Compute the load vector between two particles to update the one passed in argument. Two different types of
          * load are available by changing a define in the constants.hpp file :
          * - General gravity load
-         * - Lennard Jones potential (with Argon parameters)
+         * - Lennard Jones potential
          *
          * @param particle where the load is applied
          */
@@ -161,7 +162,6 @@ namespace Tree {
             Type new_position = new_velocity * DELTA_T + this->get(POS);
 
             this->set(VEL, new_velocity);
-            new_velocity.print();
             this->set(POS, new_position);
             this->set(LOAD, Type());
         }

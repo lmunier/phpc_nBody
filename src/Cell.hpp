@@ -9,17 +9,19 @@
 
 #ifndef PHPC_NBODY_CELL_HPP
 #define PHPC_NBODY_CELL_HPP
+
 /**
  * @include constants.hpp which contains all the needed project's constants/includes
  * @include Vector.hpp custom library to have minimal vector implementation
  * @include Tree.hpp custom class to have mother class link
- *
- * @namespace std to simplify code implementation
  */
 #include "constants.hpp"
 #include "Vector.hpp"
 #include "Tree.hpp"
 
+/**
+ * @namespace std to simplify code implementation
+ */
 using namespace std;
 
 /**
@@ -198,7 +200,10 @@ namespace Tree {
         }
 
         /**
-         * Compute the load vector between a particle and a particle cluster represented by a center of mass.
+         * Compute the load vector between two particles to update the one passed in argument. Two different types of
+         * load are available by changing a define in the constants.hpp file :
+         * - General gravity load
+         * - Lennard Jones potential
          *
          * @param particle where the load is applied
          */

@@ -12,12 +12,13 @@
 
 /**
  * @include constants.hpp which contains all the needed project's constants/includes
- *
- * @namespace use std to simplify code implementation
  */
 #include "constants.hpp"
 
-using namespace std;
+/**
+ * @namespace std to simplify code implementation
+ */
+ using namespace std;
 
 /**
  * Class of 2D vectors.

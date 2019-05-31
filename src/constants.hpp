@@ -12,8 +12,6 @@
 
 /**
  * Different includes to have all the c++ functions/library needed.
- *
- * @namespace use std::chrono to simplify notation on time duration computing
  */
 #include <iostream>            /**< input/output stream objects */
 #include <fstream>             /**< input/output stream class to operate on files */
@@ -25,6 +23,10 @@
 #include <math.h>              /**< different maths functions */
 
 #include <chrono>              /**< deal with time */
+
+/**
+ * @namespace std::chrono to simplify notation on time duration computing
+ */
 using namespace std::chrono;
 
 /**
@@ -45,7 +47,7 @@ using namespace std::chrono;
 #define SHIFT SIDE/3.0f                 /**< shift each particles to unbalanced probability of particles position */
 #define MASS_MAX 10e10f                 /**< maximum of mass value for a particle */
 
-#define LOAD_TYPE 1                   /**< load to use in the implementation GRAVITY == 0 or LENNARD_JONES == 1 */
+#define LOAD_TYPE 0                   /**< load to use in the implementation GRAVITY == 0 or LENNARD_JONES == 1 */
 
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
 #define ITERATIONS 1000                /**< number of iterations to solve nBody problem */

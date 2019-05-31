@@ -34,14 +34,15 @@
  * @include constants.hpp which contains all the needed project's constants/includes
  * @include Vector.hpp custom library to have minimal vector implementation
  * @include Tree.hpp library to create a quadtree/octree data structure and interact on different cells/particles
- *
- * @namespace use std to simplify code implementation
- * @namespace use Tree to simplify code implementation
  */
 #include "constants.hpp"
 #include "Cell.hpp"
 #include "Particle.hpp"
 
+/**
+ * @namespace std to simplify code implementation
+ * @namespace Tree to simplify code implementation
+ */
 using namespace std;
 using namespace Tree;
 

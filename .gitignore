@@ -10,3 +10,7 @@ doc/*
 
 # png
 *.png
+
+# build
+build/
+nbody
