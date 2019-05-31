@@ -56,8 +56,8 @@ using namespace Tree;
 template <typename Type>
 void generate_data(Cell<Type>* root, Type vec) {
     float p_m = MASS_MAX;
-    float x_rnd, p_x = 0.5*root->get(DIM).x;
-    float y_rnd, p_y = 0.5*root->get(DIM).y;
+    float x_rnd, p_x = 0.5f * OCCUPATION_PERC * root->get(DIM).x;
+    float y_rnd, p_y = 0.5f * OCCUPATION_PERC * root->get(DIM).y;
 
     vector< AbstractType<Type>* > other_particle{};
 
@@ -78,7 +78,7 @@ void generate_data(Cell<Type>* root, Type vec) {
             y_rnd -= SHIFT;
 
 #if NB_DIM == DIM_3
-        float z_rnd, p_z = 0.5*root->get(DIM).z;
+        float z_rnd, p_z = 0.5f * OCCUPATION_PERC * root->get(DIM).z;
         uniform_real_distribution<float> dist_z(-p_z, p_z);
 
         z_rnd = dist_z(rd);
