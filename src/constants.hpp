@@ -34,20 +34,18 @@ using namespace std::chrono;
 
 #define G 6.67408e-11f                  /**< gravitational general constant */
 #define EPSILON 0.000005f               /**< to avoid collision between particles */
-#define BH_THETA 0.5                   /**< Barnes-Hut threshold to consider particles as a unique one */
+#define BH_THETA 0.5f                   /**< Barnes-Hut threshold to consider particles as a unique one */
 
 #define DIM_2 2                        /**< number of dimension in 2D */
 #define DIM_3 3                        /**< number of dimension in 3D */
-#define NB_DIM DIM_2                   /**< number of dimension chosen for the project */
+#define NB_DIM DIM_3                   /**< number of dimension chosen for the project */
 
 #define NB_PARTICLES 50                /**< number of particles for the project */
 #define SIDE 100                      /**< side of the area considered for the project */
 #define SHIFT SIDE/3.0f                 /**< shift each particles to unbalanced probability of particles position */
-#define MASS_MAX 10e11f                 /**< maximum of mass value for a particle */
+#define MASS_MAX 10e10f                 /**< maximum of mass value for a particle */
 
 #define LOAD_TYPE 1                   /**< load to use in the implementation GRAVITY == 0 or LENNARD_JONES == 1 */
-#define POT_WELL 1.65e-21f              /**< potential well of argon */
-#define POT_ZERO_DISTANCE 3.4e-10f      /**< argon finite distance at which the inter-particle potential is zero */
 
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
 #define ITERATIONS 1000                /**< number of iterations to solve nBody problem */

@@ -35,12 +35,19 @@ public:
     Type y;
 
     /**
-     * Constructor of the 2D vector.
+     * Surcharge constructor of the 3D vector. Call Vector2 constructor to construct it.
+     *
+     * @param val coordinate on all axis
+     */
+    explicit Vector2(Type val = 0.0f) : x(val), y(val) {}
+
+    /**
+     * Surcharge  constructor of the 2D vector.
      *
      * @param x_val coordinate on x axis
      * @param y_val coordinate on y axis
      */
-    explicit Vector2(Type x_val = 0.0f, Type y_val = 0.0f) :
+    Vector2(Type x_val, Type y_val) :
             x(x_val),
             y(y_val) {}
 
@@ -74,14 +81,23 @@ public:
         return sqrtf(this->x*this->x + this->y*this->y);
     }
 
+    Vector2<Type> pow(Type power) {
+        Vector2<Type> tmp = Vector2<Type>();
+
+        tmp.x = powf(this->x, power);
+        tmp.y = powf(this->y, power);
+
+        return tmp;
+    }
+
     /**
      * Override - to compute on vector2<Type>. Avoid having a too small vector which reach to segfault.
      *
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector2<Type> operator- (Vector2 vec) {
-        Vector2 tmp = Vector2();
+    Vector2<Type> operator- (Vector2<Type> vec) {
+        Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x - vec.x;
         if (abs(tmp.x) < EPSILON)
@@ -100,8 +116,8 @@ public:
      * @param vec vector to add to the given vector
      * @return given vector plus vec argument
      */
-    Vector2<Type> operator+ (Vector2 vec) {
-        Vector2 tmp = Vector2();
+    Vector2<Type> operator+ (Vector2<Type> vec) {
+        Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x + vec.x;
         tmp.y = this->y + vec.y;
@@ -116,7 +132,7 @@ public:
      * @return given vector plus scalar argument on each dimension
      */
     Vector2<Type> operator+ (Type scalar) {
-        Vector2 tmp = Vector2();
+        Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x + scalar;
         tmp.y = this->y + scalar;
@@ -131,7 +147,7 @@ public:
      * @return given vector multiply by scalar argument
      */
     Vector2<Type> operator* (Type scalar) {
-        Vector2 tmp = Vector2();
+        Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = scalar * this->x;
         tmp.y = scalar * this->y;
@@ -140,16 +156,31 @@ public:
     }
 
     /**
-     * Override / to compute on vector3<Type>.
+     * Override / to compute on vector2<Type> with a scalar argument.
      *
      * @param Type value to divide the given vector
      * @return given vector divide by scalar argument
      */
     Vector2<Type> operator/ (Type scalar) {
-        Vector2 tmp = Vector2();
+        Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x / scalar;
         tmp.y = this->y / scalar;
+
+        return tmp;
+    }
+
+    /**
+     * Override / to compute on vector2<Type> with a vector argument.
+     *
+     * @param Type value to divide the given vector
+     * @return given vector divide by vec argument
+     */
+    Vector2<Type> operator/ (Vector2<Type> vec) {
+        Vector2<Type> tmp = Vector2<Type>();
+
+        tmp.x = this->x / vec.x;
+        tmp.y = this->y / vec.y;
 
         return tmp;
     }
@@ -176,13 +207,22 @@ public:
     Type z;
 
     /**
-     * Constructor of the 3D vector. Call Vector2 constructor to construct it.
+     * Surcharge constructor of the 3D vector. Call Vector2 constructor to construct it.
+     *
+     * @param val coordinate on all axis
+     */
+    explicit Vector3(Type val = 0.0f) :
+            Vector2f(val, val),
+            z(val) {}
+
+    /**
+     * Surcharge constructor of the 3D vector. Call Vector2 constructor to construct it.
      *
      * @param x_val coordinate on x axis
      * @param y_val coordinate on y axis
      * @param y_val coordinate on z axis
      */
-    explicit Vector3(Type x_val = 0.0f, Type y_val = 0.0f, Type z_val = 0.0f) :
+    Vector3(Type x_val, Type y_val, Type z_val) :
         Vector2f(x_val, y_val),
         z(z_val) {}
 
@@ -199,14 +239,14 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    virtual string to_file() {
+    string to_file() override {
         string coord;
         coord = to_string(this->x) + "," + to_string(this->y) + "," + to_string(this->z) + "\n";
 
         return coord;
     }
 #endif
-/**
+    /**
      * Override norm computation of the given vector.
      *
      * @return norm of the given vector
@@ -215,14 +255,24 @@ public:
         return sqrtf(this->x*this->x + this->y*this->y + this->z*this->z);
     }
 
+    Vector3<Type> pow(Type power) {
+        Vector3<Type> tmp = Vector3<Type>();
+
+        tmp.x = powf(this->x, power);
+        tmp.y = powf(this->y, power);
+        tmp.z = powf(this->z, power);
+
+        return tmp;
+    }
+
     /**
      * Override - to compute on vector3<Type>. Avoid having a too small vector which reach to segfault.
      *
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector3<Type> operator- (Vector3 vec) {
-        Vector3 tmp = Vector3();
+    Vector3<Type> operator- (Vector3<Type> vec) {
+        Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x - vec.x;
         if (abs(tmp.x) < EPSILON)
@@ -245,8 +295,8 @@ public:
      * @param vec vector to add to the given vector
      * @return given vector plus vec argument
      */
-    Vector3<Type> operator+ (Vector3 vec) {
-        Vector3 tmp = Vector3();
+    Vector3<Type> operator+ (Vector3<Type> vec) {
+        Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x + vec.x;
         tmp.y = this->y + vec.y;
@@ -262,7 +312,7 @@ public:
      * @return given vector plus scalar argument on each dimension
      */
     Vector3<Type> operator+ (Type scalar) {
-        Vector3 tmp = Vector3();
+        Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x + scalar;
         tmp.y = this->y + scalar;
@@ -278,7 +328,7 @@ public:
      * @return given vector multiply by scalar argument
      */
     Vector3<Type> operator* (Type scalar) {
-        Vector3 tmp = Vector3();
+        Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = scalar * this->x;
         tmp.y = scalar * this->y;
@@ -294,11 +344,27 @@ public:
      * @return given vector divide by scalar argument
      */
     Vector3<Type> operator/ (Type scalar) {
-        Vector3 tmp = Vector3();
+        Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x / scalar;
         tmp.y = this->y / scalar;
         tmp.z = this->z / scalar;
+
+        return tmp;
+    }
+
+    /**
+     * Override / to compute on vector3<Type> with a vector argument.
+     *
+     * @param Type value to divide the given vector
+     * @return given vector divide by vec argument
+     */
+    Vector3<Type> operator/ (Vector3<Type> vec) {
+        Vector3<Type> tmp = Vector3<Type>();
+
+        tmp.x = this->x / vec.x;
+        tmp.y = this->y / vec.y;
+        tmp.z = this->z / vec.z;
 
         return tmp;
     }

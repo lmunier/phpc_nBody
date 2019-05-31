@@ -42,10 +42,6 @@
 #include "Cell.hpp"
 #include "Particle.hpp"
 
-#include <bits/stdc++.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 using namespace std;
 using namespace Tree;
 
