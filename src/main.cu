@@ -111,7 +111,7 @@ void generate_data(Cell<Type>* root, Type vec) {
  * @param part_loaded pointer to the current particle for which the load is computed
  */
 template <typename Type>
-void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nullptr) {
+void update_load(AbstractType<Type> *head) {
     static AbstractType<Type>* root = head;
 
     for (auto n : head->get_next()) {
@@ -120,18 +120,45 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
             return;
         } /** If next element is a particle */
         else if (n->get_type() == ParticleT) {
-            if (part_loaded == nullptr)
-                update_load(root, n);
-            else if (n != part_loaded)
-                n->compute_load(part_loaded);
+            update_load<<<1, 1>>>(root, n);
         } /** If next element is a cell */
         else {
-            if (part_loaded != nullptr && (n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
-                n->compute_load(part_loaded);
-            else
-                update_load(n, part_loaded);
+            update_load(n);
         }
     }
+}
+
+/**
+ * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
+ *
+ * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+ * @param head pointer to the current cell of the tree
+ * @param part_loaded pointer to the current particle for which the load is computed
+ */
+template <typename Type>
+__global__ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded) {
+    auto cu_next = head->get_next();
+    
+    for (auto n : cu_next) {
+        /** If next element is empty */
+        if (n == nullptr) {
+            return;
+        } /** If next element is a particle */
+        else if (n->get_type() == ParticleT) {
+            n->compute_load(part_loaded);
+        } /** If next element is a cell */
+        else {
+            if ((n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
+                n->compute_load(part_loaded);
+            else {
+                __syncthreads();
+                update_load<<<1, 1>>>(n, part_loaded);
+                cudaDeviceSynchronize();
+            }
+        }
+    }
+
+    __syncthreads();
 }
 
 /**
@@ -279,5 +306,7 @@ int main(int argc, char *argv[]) {
 
     cout << duration_cast<microseconds>(stop - start).count() << endl;
 
+    /** Properly clear cuda memory and close program */
+    cudaDeviceReset();
     return 0;
 }

@@ -59,7 +59,7 @@ namespace Tree {
          *
          * @return enum value ParticleT
          */
-        my_type get_type() override { return ParticleT; }
+        __host__ __device__ my_type get_type() override { return ParticleT; }
 
         /**
          * Return one of the following attribute of the given particle :
@@ -70,7 +70,7 @@ namespace Tree {
          * @param p enum value of the attribute
          * @return desired attribute of the given particle
          */
-        Type get(property p) override {
+        __host__ __device__ Type get(property p) override {
             switch (p) {
                 case POS :
                     return this->_pos;
@@ -92,7 +92,7 @@ namespace Tree {
          * @param p enum value of the attribute
          * @param vec new vector value to set the attribute
          */
-        void set(property p, Type vec) override {
+        __host__ __device__ void set(property p, Type vec) override {
             switch (p) {
                 case POS :
                     this->_pos = vec;
@@ -142,7 +142,7 @@ namespace Tree {
          *
          * @param particle where the load is applied
          */
-        void compute_load(AbstractType<Type> *particle) override {
+        __device__ void compute_load(AbstractType<Type> *particle) override {
 #if LOAD_TYPE == 0
             Type tmp = this->get(POS) - particle->get(POS);
             float d = max(tmp.norm(), EPSILON);
