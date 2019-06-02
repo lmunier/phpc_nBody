@@ -47,7 +47,7 @@ namespace Tree {
         /**
          * Destructor function to safely delete all pointers in this class and set state of AbstractType to false.
          */
-        virtual ~AbstractType() {
+        __host__ __device__ virtual ~AbstractType() {
             this->_state = false;
             delete this->_parent;
         };
@@ -90,7 +90,7 @@ namespace Tree {
          *
          * @return _parent attribute of the given particle/cell
          */
-        __host__ __device__ AbstractType<Type>* get_parent() { return this->_parent; }
+        __host__ __device__ AbstractType<Type>* get_parent() { return _parent; }
 
         /**
          * Virtual method to return the attribute vector array of pointer on the next particle/cells in the tree
@@ -98,7 +98,7 @@ namespace Tree {
          *
          * @return _next attribute vector array of pointer on the next particle/cells in the tree data-structure
          */
-        __host__ __device__ virtual vector< AbstractType<Type>* > get_next() {};
+        __device__ virtual vector< AbstractType<Type>* > get_next() { return vector< AbstractType<Type>* >{}; };
 
         /**
          * Virtual method to get the value of an attribute of the given particle/cell. Override by the child class.
@@ -182,7 +182,7 @@ namespace Tree {
          * Virtual method to subdivide a node in 2^NB_DIM sub-cells and fill _next attribute with a pointer to each
          * sub-cell. Override by the child class.
          */
-        virtual void subdivide_tree() {};
+        //__global__ virtual void subdivide_tree() {};
 
         /**
          * Virtual method store particle in the tree. Override by the child class.

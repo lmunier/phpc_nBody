@@ -40,7 +40,7 @@ public:
      *
      * @param val coordinate on all axis
      */
-    explicit Vector2(Type val = 0.0f) : x(val), y(val) {}
+    __host__ __device__ explicit Vector2(Type val = 0.0f) : x(val), y(val) {}
 
     /**
      * Surcharge  constructor of the 2D vector.
@@ -48,7 +48,7 @@ public:
      * @param x_val coordinate on x axis
      * @param y_val coordinate on y axis
      */
-    Vector2(Type x_val, Type y_val) :
+    __host__ __device__ Vector2(Type x_val, Type y_val) :
             x(x_val),
             y(y_val) {}
 
@@ -68,7 +68,7 @@ public:
     /**
      * Print the coordinates of the given vector in the console.
      */
-    virtual void print() {
+    __host__ __device__ virtual void print() {
         printf("Vector2f : %f \t %f\n", this->x, this->y);
     }
 
@@ -77,7 +77,7 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    virtual string to_file() {
+    __host__ __device__ virtual string to_file() {
         string coord;
         coord = to_string(this->x) + "," + to_string(this->y) + "\n";
 
@@ -224,7 +224,7 @@ public:
      *
      * @param val coordinate on all axis
      */
-    explicit Vector3(Type val = 0.0f) :
+    __host__ __device__ explicit Vector3(Type val = 0.0f) :
             Vector2f(val, val),
             z(val) {}
 
@@ -235,7 +235,7 @@ public:
      * @param y_val coordinate on y axis
      * @param y_val coordinate on z axis
      */
-    Vector3(Type x_val, Type y_val, Type z_val) :
+    __host__ __device__ Vector3(Type x_val, Type y_val, Type z_val) :
         Vector2f(x_val, y_val),
         z(z_val) {}
 
@@ -243,7 +243,7 @@ public:
     /**
      * Override the print function of Vector2 to print 3D vectors.
      */
-    void print() override {
+    __host__ __device__ void print() override {
         printf("Vector3f : %f \t %f \t %f\n", this->x, this->y, this->z);
     }
 
@@ -252,7 +252,7 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    string to_file() override {
+    __host__ __device__ string to_file() override {
         string coord;
         coord = to_string(this->x) + "," + to_string(this->y) + "," + to_string(this->z) + "\n";
 

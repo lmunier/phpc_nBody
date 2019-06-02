@@ -88,7 +88,7 @@ void generate_data(Cell<Type>* root, Type vec) {
 
         /** Initialize quadtree/octree */
         if(root->get_parent() == root) {
-            root->subdivide_tree();
+            subdivide_tree(root);
             root->set_parent(nullptr);
         }
 
@@ -104,116 +104,139 @@ void generate_data(Cell<Type>* root, Type vec) {
 }
 
 /**
- * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param head pointer to the current cell of the tree
- * @param part_loaded pointer to the current particle for which the load is computed
+ * Subdivide a node in 2^NB_DIM sub-cells and fill _next attribute vector array with a pointer to each sub-cell.
  */
 template <typename Type>
-void update_load(AbstractType<Type> *head) {
-    static AbstractType<Type>* root = head;
+void subdivide_tree(Cell<Type>* root) {
+    bool y = true, z = false;
+    Type size = root->get(DIM) * 0.5;
 
-    for (auto n : head->get_next()) {
-        /** If next element is empty */
-        if (n == nullptr) {
-            return;
-        } /** If next element is a particle */
-        else if (n->get_type() == ParticleT) {
-            update_load<<<1, 1>>>(root, n);
-        } /** If next element is a cell */
-        else {
-            update_load(n);
-        }
-    }
-}
+    /** Loop to have 2^NB_DIM sub-cells */
+    for (int n = 0; n < pow(2, NB_DIM); n++) {
+        /** Compute center of the cell */
+        if (n % 2 == 0)
+            y = !y;
 
-/**
- * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param head pointer to the current cell of the tree
- * @param part_loaded pointer to the current particle for which the load is computed
- */
-template <typename Type>
-__global__ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded) {
-    auto cu_next = head->get_next();
-    
-    for (auto n : cu_next) {
-        /** If next element is empty */
-        if (n == nullptr) {
-            return;
-        } /** If next element is a particle */
-        else if (n->get_type() == ParticleT) {
-            n->compute_load(part_loaded);
-        } /** If next element is a cell */
-        else {
-            if ((n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
-                n->compute_load(part_loaded);
-            else {
-                __syncthreads();
-                update_load<<<1, 1>>>(n, part_loaded);
-                cudaDeviceSynchronize();
-            }
-        }
-    }
+#if NB_DIM == DIM_2
+        Type center = Type(size.x * (0.5 * pow(-1, (n + 1) % 2)), size.y * (0.5 * pow(-1, y)));
+#elif NB_DIM == DIM_3
+        if (n == 4)
+            z = true;
 
-    __syncthreads();
-}
-
-/**
- * Update position and velocity for each particle. Generate a csv file with all the position if needed.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer on the node of the previous cell
- * @param iter current iteration of the solution
- */
-template <typename Type>
-void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir){
-    for (auto n : root->get_next()) {
-        /** If next element is empty */
-        if (n == nullptr) {
-            return;
-        } else if (n->get_type() == ParticleT) {
-            n->update_vel_pos();
-
-#ifdef PRINT
-            if (n != nullptr)
-                generate_file(n, 1000 * iter * DELTA_T, dir);
+        Type center = Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)), size.z*(0.5*pow(-1, z)));
+        center.print();
 #endif
-        } else if (n->get_type() == CellT) {
-            update_particles_pos(n, iter, dir);
-        }
+
+        center = root->get(CENTER) + center;
+
+        /** Fill _next vector array with each new sub-cell */
+        auto next = new Cell<Type>(center, size, center);
+        root->get_next().push_back(next);
+        next->set_parent(root);
     }
 }
 
 /**
- * Update the current quadtree/octree datastructure with the new position of each particle if they pass to an other
- * cell.
+ * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer on the node of the previous cell
+ * @param head pointer to the current cell of the tree
+ * @param part_loaded pointer to the current particle for which the load is computed
  */
-template <typename Type>
-void update_particles_tree(AbstractType<Type>* root){
-    auto next = root->get_next();
+// template <typename Type>
+// __device__ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded) {
+//     for (auto n : head->get_next()) {
+//         /** If next element is empty */
+//         if (n == nullptr) {
+//             return;
+//         } /** If next element is a particle */
+//         else if (n->get_type() == ParticleT) {
+//             n->compute_load(part_loaded);
+//         } /** If next element is a cell */
+//         else {
+//             if (part_loaded != nullptr && (n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
+//                 n->compute_load(part_loaded);
+//         }
+//     }
+// }
 
-    for (auto it = next.begin(); it != next.end(); ++it) {
-        /** If next element is empty or is already deleted */
-        if ((*it) == nullptr || !(*it)->get_state()) {
-            return;
-        } /** If next element is a particle */
-        else if ((*it)->get_type() == ParticleT) {
-            if ((*it)->is_out_boundaries()) {
-                if ((*it)->update_tree() == -1)
-                    delete *it;
-            }
-        } /** If next element is a cell */
-        else if ((*it)->get_type() == CellT) {
-            update_particles_tree(*it);
-        }
-    }
+ /**
+  * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
+  *
+  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+  * @param head pointer to the current cell of the tree
+  * @param part_loaded pointer to the current particle for which the load is computed
+  */
+template <typename Type>
+__global__ void update_load(AbstractType<Type> *head) {
+    //head = head->get_next()[0];
+    // for (auto n : ) {
+    //     /** If next element is empty */
+    //     if (n == nullptr) {
+    //         return;
+    //     } /** If next element is a particle */
+    //     else if (n->get_type() == ParticleT) {
+    //         update_load(head, n);
+    //     } /** If next element is a cell */
+    //     else {
+    //         update_load<<<1, 1>>>(n);
+    //     }
+    // }
 }
+
+// /**
+//  * Update position and velocity for each particle. Generate a csv file with all the position if needed.
+//  *
+//  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+//  * @param root pointer on the node of the previous cell
+//  * @param iter current iteration of the solution
+//  */
+// template <typename Type>
+// void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir){
+//     for (auto n : root->get_next()) {
+//         /** If next element is empty */
+//         if (n == nullptr) {
+//             return;
+//         } else if (n->get_type() == ParticleT) {
+//             n->update_vel_pos();
+
+// #ifdef PRINT
+//             if (n != nullptr)
+//                 generate_file(n, 1000 * iter * DELTA_T, dir);
+// #endif
+//         } else if (n->get_type() == CellT) {
+//             update_particles_pos(n, iter, dir);
+//         }
+//     }
+// }
+
+// /**
+//  * Update the current quadtree/octree datastructure with the new position of each particle if they pass to an other
+//  * cell.
+//  *
+//  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
+//  * @param root pointer on the node of the previous cell
+//  */
+// template <typename Type>
+// void update_particles_tree(AbstractType<Type>* root){
+//     auto next = root->get_next();
+
+//     for (auto it = next.begin(); it != next.end(); ++it) {
+//         /** If next element is empty or is already deleted */
+//         if ((*it) == nullptr || !(*it)->get_state()) {
+//             return;
+//         } /** If next element is a particle */
+//         else if ((*it)->get_type() == ParticleT) {
+//             if ((*it)->is_out_boundaries()) {
+//                 if ((*it)->update_tree() == -1)
+//                     delete *it;
+//             }
+//         } /** If next element is a cell */
+//         else if ((*it)->get_type() == CellT) {
+//             update_particles_tree(*it);
+//         }
+//     }
+// }
 
 /**
  * Barnes hut part of the algorithm.
@@ -228,9 +251,9 @@ void barnes_hut(Type vec_dim, const string& dir) {
     generate_data(root, Type());
 
     for (int i = 1; i <= ITERATIONS; i++) {
-        update_load(root);
-        update_particles_pos(root, i, dir);
-        update_particles_tree(root);
+//        update_load<<<1, 1>>>(root);
+//        update_particles_pos(root, i, dir);
+//        update_particles_tree(root);
     }
 }
 
@@ -241,27 +264,27 @@ void barnes_hut(Type vec_dim, const string& dir) {
  * @param particle pointer on the particle to write in csv file
  * @param millis_time timestep to change filename and save chronology
  */
-#ifdef PRINT
-template <typename Type>
-void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
-    ofstream csv_file;
-    string filename = dir + "/out_" + to_string(millis_time) + ".csv";
+// #ifdef PRINT
+// template <typename Type>
+// void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
+//     ofstream csv_file;
+//     string filename = dir + "/out_" + to_string(millis_time) + ".csv";
 
-    csv_file.open(filename, ios::app);
+//     csv_file.open(filename, ios::app);
 
-    /** Check if file is empty to write the title of each column */
-    if (csv_file.tellp() == 0) {
-#if NB_DIM == DIM_2
-        csv_file << "x,y\n";
-#elif NB_DIM == DIM_3
-        csv_file << "x,y,z\n";
-#endif
-    }
+//     /** Check if file is empty to write the title of each column */
+//     if (csv_file.tellp() == 0) {
+// #if NB_DIM == DIM_2
+//         csv_file << "x,y\n";
+// #elif NB_DIM == DIM_3
+//         csv_file << "x,y,z\n";
+// #endif
+//     }
 
-    csv_file << particle->get(POS).to_file();
-    csv_file.close();
-}
-#endif
+//     csv_file << particle->get(POS).to_file();
+//     csv_file.close();
+// }
+// #endif
 
 /**
  * Main function, compute time to solve problem and store size of the overall area where particle are studied.
@@ -271,21 +294,6 @@ void generate_file(AbstractType<Type>* particle, int millis_time, const string& 
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
-    /** Find/set the device. */
-    /** The test requires an architecture SM35 or greater (CDP capable). */
-    int cuda_device = findCudaDevice(argc, (const char **)argv);
-    cudaDeviceProp deviceProps;
-    checkCudaErrors(cudaGetDeviceProperties(&deviceProps, cuda_device));
-    int cdpCapable = (deviceProps.major == 3 && deviceProps.minor >= 5) || deviceProps.major >=4;
-
-    printf("GPU device %s has compute capabilities (SM %d.%d)\n", deviceProps.name, deviceProps.major, deviceProps.minor);
-
-    if (!cdpCapable)
-    {
-        std::cerr << "cdpQuadTree requires SM 3.5 or higher to use CUDA Dynamic Parallelism.  Exiting...\n" << std::endl;
-        exit(EXIT_SUCCESS);
-    }
-
     int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
 

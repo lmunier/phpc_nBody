@@ -1,7 +1,7 @@
 CXX=g++
 NVCC=nvcc
 CXXFLAGS= -std=c++11 -g -Wall -O0
-CUDAFLAGS= -std=c++11 -arch=sm_35 -rdc=true
+CUDAFLAGS= -std=c++11 -arch=sm_35 -rdc=true 
 LDFLAGS=
 LIBS= -lcudadevrt
 
@@ -11,8 +11,7 @@ DOC = doc
 SRCDIR=src
 OBJDIR=build
 BINDIR=.
-CXXFLAGS+= -I ./$(SRCDIR)/*.hpp
-CUDAFLAGS+= -I /usr/local/cuda-10.1/include/ -I /usr/local/cuda-10.1/samples/common/inc/
+#CXXFLAGS+= -I ./$(SRCDIR)/*.hpp
 
 SOURCES  := $(wildcard $(SRCDIR)/*.cu)
 INCLUDES := $(wildcard $(SRCDIR)/*.hpp)
