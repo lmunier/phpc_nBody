@@ -22,6 +22,11 @@
 #include <vector>              /**< dynamic arrays */
 #include <math.h>              /**< different maths functions */
 
+#include <thrust/device_vector.h>
+#include <thrust/fill.h>
+#include <thrust/for_each.h>
+#include <thrust/execution_policy.h>
+
 #include <chrono>              /**< deal with time */
 
 /**

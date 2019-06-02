@@ -52,18 +52,6 @@ public:
             x(x_val),
             y(y_val) {}
 
-    __host__ void *operator new(size_t len) {
-        void *ptr;
-        cudaMallocManaged(&ptr, len);
-        cudaDeviceSynchronize();
-        return ptr;
-    }
-
-    __host__ void operator delete(void *ptr) {
-        cudaDeviceSynchronize();
-        cudaFree(ptr);
-    }
-
 #ifdef PRINT
     /**
      * Print the coordinates of the given vector in the console.
@@ -77,7 +65,7 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    __host__ __device__ virtual string to_file() {
+    __host__ virtual string to_file() {
         string coord;
         coord = to_string(this->x) + "," + to_string(this->y) + "\n";
 
@@ -252,7 +240,7 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    __host__ __device__ string to_file() override {
+    __host__ string to_file() override {
         string coord;
         coord = to_string(this->x) + "," + to_string(this->y) + "," + to_string(this->z) + "\n";
 

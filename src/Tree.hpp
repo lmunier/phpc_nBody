@@ -47,7 +47,7 @@ namespace Tree {
         /**
          * Destructor function to safely delete all pointers in this class and set state of AbstractType to false.
          */
-        __host__ __device__ virtual ~AbstractType() {
+        __host__ virtual ~AbstractType() {
             this->_state = false;
             delete this->_parent;
         };
@@ -98,7 +98,7 @@ namespace Tree {
          *
          * @return _next attribute vector array of pointer on the next particle/cells in the tree data-structure
          */
-        __device__ virtual vector< AbstractType<Type>* > get_next() { return vector< AbstractType<Type>* >{}; };
+        __host__ __device__ virtual thrust::device_vector<AbstractType < Type>* >* get_next() {}
 
         /**
          * Virtual method to get the value of an attribute of the given particle/cell. Override by the child class.

@@ -52,7 +52,7 @@ namespace Tree {
         /**
          * Destructor to safely delete all pointer in the Cell element.
          */
-        __host__ __device__ ~Cell() override {
+        __host__ ~Cell() override {
             this->set_parent(nullptr);
             delete this->get_parent();
 
@@ -75,7 +75,15 @@ namespace Tree {
          *
          * @return _next attribute vector array of pointer on the next particle/cells in the tree data-structure
          */
-        __device__ vector<AbstractType < Type>* > get_next() override { return _next; }
+        __host__ __device__ thrust::device_vector<AbstractType < Type>* >* get_next() override {
+            /*printf("In get_next");
+            printf("%p\n", vec);
+            printf("%p\n", &_next);
+            vec = &(this->_next); 
+            printf("%p\n", vec);
+            printf("%p\n", &_next);*/
+            return &_next;
+        }
 
         /**
          * Return one of the following attribute of the given particle :
@@ -218,7 +226,7 @@ namespace Tree {
         Type _size;                              /**< vector size of the given cell */
         Type _mass_pos;                          /**< vector position of the center of mass of the given cell */
 
-        vector<AbstractType < Type>*> _next{};    /**< vector list of the following cells or a particle */
+        thrust::device_vector<AbstractType < Type>*> _next{};    /**< vector list of the following cells or a particle */
     };
 }
 

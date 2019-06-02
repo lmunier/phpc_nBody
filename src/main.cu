@@ -110,6 +110,7 @@ template <typename Type>
 void subdivide_tree(Cell<Type>* root) {
     bool y = true, z = false;
     Type size = root->get(DIM) * 0.5;
+    thrust::device_vector<AbstractType < Type>* >* next_vec = root->get_next();
 
     /** Loop to have 2^NB_DIM sub-cells */
     for (int n = 0; n < pow(2, NB_DIM); n++) {
@@ -130,9 +131,10 @@ void subdivide_tree(Cell<Type>* root) {
         center = root->get(CENTER) + center;
 
         /** Fill _next vector array with each new sub-cell */
-        auto next = new Cell<Type>(center, size, center);
-        root->get_next().push_back(next);
-        next->set_parent(root);
+        //auto next_vec = new thrust::device_vector<AbstractType < Type>* >{};
+        auto next_cell = new Cell<Type>(center, size, center);
+        next_cell->set_parent(root);
+        next_vec->push_back(next_cell);
     }
 }
 
@@ -168,9 +170,11 @@ void subdivide_tree(Cell<Type>* root) {
   * @param part_loaded pointer to the current particle for which the load is computed
   */
 template <typename Type>
-__global__ void update_load(AbstractType<Type> *head) {
-    //head = head->get_next()[0];
-    // for (auto n : ) {
+__global__ void update_load(AbstractType<Type> *head, thrust::device_vector<AbstractType < Type>* >* next_vec) {
+    printf("%p\n",thrust::get<0>(*next_vec));
+
+    //for (auto n : (*next_vec)) {
+    //    printf("%d\n", n);
     //     /** If next element is empty */
     //     if (n == nullptr) {
     //         return;
@@ -181,7 +185,7 @@ __global__ void update_load(AbstractType<Type> *head) {
     //     else {
     //         update_load<<<1, 1>>>(n);
     //     }
-    // }
+    //}
 }
 
 // /**
@@ -250,8 +254,12 @@ void barnes_hut(Type vec_dim, const string& dir) {
     root->set_parent(root);
     generate_data(root, Type());
 
+    // thrust::device_vector<AbstractType < Type >* > next_vec(
+    //     thrust::make_counting_iterator((AbstractType < Type >*) 0),
+    //     thrust::make_counting_iterator((AbstractType < Type >*) 0)+pow(2, NB_DIM));
+    
     for (int i = 1; i <= ITERATIONS; i++) {
-//        update_load<<<1, 1>>>(root);
+        update_load<<<1,1>>>(root, thrust::raw_pointer_cast(root->get_next()));
 //        update_particles_pos(root, i, dir);
 //        update_particles_tree(root);
     }
@@ -264,27 +272,27 @@ void barnes_hut(Type vec_dim, const string& dir) {
  * @param particle pointer on the particle to write in csv file
  * @param millis_time timestep to change filename and save chronology
  */
-// #ifdef PRINT
-// template <typename Type>
-// void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
-//     ofstream csv_file;
-//     string filename = dir + "/out_" + to_string(millis_time) + ".csv";
+#ifdef PRINT
+template <typename Type>
+void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
+    ofstream csv_file;
+    string filename = dir + "/out_" + to_string(millis_time) + ".csv";
 
-//     csv_file.open(filename, ios::app);
+    csv_file.open(filename, ios::app);
 
-//     /** Check if file is empty to write the title of each column */
-//     if (csv_file.tellp() == 0) {
-// #if NB_DIM == DIM_2
-//         csv_file << "x,y\n";
-// #elif NB_DIM == DIM_3
-//         csv_file << "x,y,z\n";
-// #endif
-//     }
+    /** Check if file is empty to write the title of each column */
+    if (csv_file.tellp() == 0) {
+#if NB_DIM == DIM_2
+        csv_file << "x,y\n";
+#elif NB_DIM == DIM_3
+        csv_file << "x,y,z\n";
+#endif
+    }
 
-//     csv_file << particle->get(POS).to_file();
-//     csv_file.close();
-// }
-// #endif
+    csv_file << particle->get(POS).to_file();
+    csv_file.close();
+}
+#endif
 
 /**
  * Main function, compute time to solve problem and store size of the overall area where particle are studied.
