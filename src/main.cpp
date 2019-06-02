@@ -36,7 +36,6 @@
  * @include Tree.hpp library to create a quadtree/octree data structure and interact on different cells/particles
  */
 #include "constants.hpp"
-#include "Cell.hpp"
 #include "Particle.hpp"
 
 /**
@@ -54,12 +53,10 @@ using namespace Tree;
  * @param vec vector to give the Type of the vector to the template function
  */
 template <typename Type>
-void generate_data(Cell<Type>* root, Type vec) {
+void generate_data(vector< Particle<Type>* >* particles, Type size) {
     float p_m = MASS_MAX;
-    float x_rnd, p_x = 0.5f * OCCUPATION_PERC * root->get(DIM).x;
-    float y_rnd, p_y = 0.5f * OCCUPATION_PERC * root->get(DIM).y;
-
-    vector< AbstractType<Type>* > other_particle{};
+    float x_rnd, p_x = 0.5f * OCCUPATION_PERC * size.x;
+    float y_rnd, p_y = 0.5f * OCCUPATION_PERC * size.y;
 
     random_device rd;
     uniform_real_distribution<float> dist_m(0, p_m);
@@ -78,19 +75,13 @@ void generate_data(Cell<Type>* root, Type vec) {
             y_rnd -= SHIFT;
 
 #if NB_DIM == DIM_3
-        float z_rnd, p_z = 0.5f * OCCUPATION_PERC * root->get(DIM).z;
+        float z_rnd, p_z = 0.5f * OCCUPATION_PERC * size.z;
         uniform_real_distribution<float> dist_z(-p_z, p_z);
 
         z_rnd = dist_z(rd);
         if(fabs(z_rnd - SHIFT) < p_z)
             z_rnd -= SHIFT;
 #endif
-
-        /** Initialize quadtree/octree */
-        if(root->get_parent() == root) {
-            root->subdivide_tree();
-            root->set_parent(nullptr);
-        }
 
         /** Create new particle */
 #if NB_DIM == DIM_2
@@ -99,7 +90,7 @@ void generate_data(Cell<Type>* root, Type vec) {
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
 #endif
 
-        root->store_particle(new_particle, nullptr);
+        particles->push_back(new_particle);
     }
 }
 
@@ -111,26 +102,17 @@ void generate_data(Cell<Type>* root, Type vec) {
  * @param part_loaded pointer to the current particle for which the load is computed
  */
 template <typename Type>
-void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nullptr) {
-    static AbstractType<Type>* root = head;
+void update_load(vector< Particle<Type>* >* particles) {
+    for (auto p_i : *particles) {
+        Type load = Type();
 
-    for (auto n : head->get_next()) {
-        /** If next element is empty */
-        if (n == nullptr) {
-            return;
-        } /** If next element is a particle */
-        else if (n->get_type() == ParticleT) {
-            if (part_loaded == nullptr)
-                update_load(root, n);
-            else if (n != part_loaded)
-                n->compute_load(part_loaded);
-        } /** If next element is a cell */
-        else {
-            if (part_loaded != nullptr && (n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
-                n->compute_load(part_loaded);
-            else
-                update_load(n, part_loaded);
+        for (auto p_j : *particles) {
+            Type tmp = p_j->get(POS) - p_i->get(POS);
+            float d = max(tmp.norm(), EPSILON);
+            load = load + tmp * (G * p_i->get_mass() * p_j->get_mass()) / d;
         }
+
+        p_i->set(LOAD, load);
     }
 }
 
@@ -142,68 +124,16 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
  * @param iter current iteration of the solution
  */
 template <typename Type>
-void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir){
-    for (auto n : root->get_next()) {
-        /** If next element is empty */
-        if (n == nullptr) {
-            return;
-        } else if (n->get_type() == ParticleT) {
-            n->update_vel_pos();
+void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int iter, const string& dir){
+    for (auto p : *particles) {
+        p->update_vel_pos();
+
+        if (p->is_out_boundaries(dim))
+            delete p;
 
 #ifdef PRINT
-            if (n != nullptr)
-                generate_file(n, 1000 * iter * DELTA_T, dir);
+        generate_file(p, 1000 * iter * DELTA_T, dir);
 #endif
-        } else if (n->get_type() == CellT) {
-            update_particles_pos(n, iter, dir);
-        }
-    }
-}
-
-/**
- * Update the current quadtree/octree datastructure with the new position of each particle if they pass to an other
- * cell.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer on the node of the previous cell
- */
-template <typename Type>
-void update_particles_tree(AbstractType<Type>* root){
-    auto next = root->get_next();
-
-    for (auto it = next.begin(); it != next.end(); ++it) {
-        /** If next element is empty or is already deleted */
-        if ((*it) == nullptr || !(*it)->get_state()) {
-            return;
-        } /** If next element is a particle */
-        else if ((*it)->get_type() == ParticleT) {
-            if ((*it)->is_out_boundaries()) {
-                if ((*it)->update_tree() == -1)
-                    delete *it;
-            }
-        } /** If next element is a cell */
-        else if ((*it)->get_type() == CellT) {
-            update_particles_tree(*it);
-        }
-    }
-}
-
-/**
- * Barnes hut part of the algorithm.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param vec_dim vector of the dimensions of the overall area where particles are generated
- */
-template <typename Type>
-void barnes_hut(Type vec_dim, const string& dir) {
-    auto root = new Cell<Type>(Type(), vec_dim, Type());
-    root->set_parent(root);
-    generate_data(root, Type());
-
-    for (int i = 1; i <= ITERATIONS; i++) {
-        update_load(root);
-        update_particles_pos(root, i, dir);
-        update_particles_tree(root);
     }
 }
 
@@ -248,19 +178,52 @@ int main(int argc, char *argv[]) {
     auto start = high_resolution_clock::now();
 
 #if NB_DIM == DIM_2
+    string dir = "";
+
     if (argv[1])
-        barnes_hut(Vector2f(width, height), argv[1]);
+        dir = argv[1];
     else
-        barnes_hut(Vector2f(width, height), "../output");
+        dir = "../output";
+    
+    Vector2f size = Vector2f(width, height);
+    vector< Particle<Vector2f>* > particles{};
+    generate_data(&particles, size);
+
+    for (int i = 1; i <= ITERATIONS; i++) {
+        update_load(&particles);
+        update_particles_pos(&particles, size, i, dir);
+    }
 #elif NB_DIM == DIM_3
     int depth = SIDE;
+    string dir = "";
     
     if (argv[1])
-        barnes_hut(Vector3f(width, height, depth), argv[1]);
+        dir = argv[1];
     else
-        barnes_hut(Vector3f(width, height, depth), "../output");
+        dir = "../output";
+
+    Vector3f size = Vector3f(width, height, depth);
+    vector< Particle<Vector3f>* > particles{};
+    generate_data(&particles, Vector3f(width, height, depth));
+
+    for (int i = 1; i <= ITERATIONS; i++) {
+        update_load(&particles);
+        update_particles_pos(&particles, size, i, dir);
+    }
 #endif
     auto stop = high_resolution_clock::now();
+
+    /** Print all the parameters */
+    cout << "Brut force" << endl;
+    cout << "Epsilon " << EPSILON << endl;
+    cout << "Nb particles " << NB_PARTICLES << endl;
+    cout << "Nb dimensions " << NB_DIM << endl;
+    cout << "Side " << SIDE << endl;
+    cout << "Shift " << SHIFT << endl;
+    cout << "Occupation percentage " << OCCUPATION_PERC << endl;
+    cout << "Maximum mass " << MASS_MAX << endl;
+    cout << "Delta t " << DELTA_T << endl;
+    cout << "Nb iterations " << ITERATIONS << endl;
 
     cout << duration_cast<microseconds>(stop - start).count() << endl;
 

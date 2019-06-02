@@ -55,13 +55,6 @@ namespace Tree {
         ~Particle() = default;
 
         /**
-         * Return the type of the given class.
-         *
-         * @return enum value ParticleT
-         */
-        my_type get_type() override { return ParticleT; }
-
-        /**
          * Return one of the following attribute of the given particle :
          * - position
          * - velocity
@@ -79,6 +72,7 @@ namespace Tree {
                 case LOAD :
                     return this->_load;
                 default:
+                    return Type();
                     break;
             }
         }
@@ -109,52 +103,6 @@ namespace Tree {
         }
 
         /**
-         * Find the index of the cell in the _next dynamic array where the particle should be stored.
-         *
-         * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
-         * @param origin center of the parent cell
-         * @param particle current particle to store
-         * @return int index of the cell where the particle should be stored
-         */
-        int find_cell_idx(Type origin) override {
-            int idx = 0;
-            Type tmp_vec = this->get(POS) - origin;
-
-            if(tmp_vec.x > 0)
-                idx += 1;
-
-            if(tmp_vec.y < 0)
-                idx += 2;
-
-#if NB_DIM == DIM_3
-            if(tmp_vec.z < 0)
-                idx += 4;
-#endif
-
-            return idx;
-        }
-
-        /**
-         * Compute the load vector between two particles to update the one passed in argument. Two different types of
-         * load are available by changing a define in the constants.hpp file :
-         * - General gravity load
-         * - Lennard Jones potential
-         *
-         * @param particle where the load is applied
-         */
-        void compute_load(AbstractType<Type> *particle) override {
-#if LOAD_TYPE == 0
-            Type tmp = this->get(POS) - particle->get(POS);
-            float d = max(tmp.norm(), EPSILON);
-            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
-#elif LOAD_TYPE == 1
-            Type tmp = particle->get(POS) - this->get(POS);
-            float d = tmp.norm();
-            particle->set(LOAD, particle->get(LOAD) + tmp * (48 / pow(d, 2)) * (1 / pow(d, 12) - 0.5f * pow(d, 6)));
-#endif
-        }
-
-        /**
          * Update velocity and position of a given particle for a given load on it. Reset load after update.
          */
         void update_vel_pos() override {
@@ -167,99 +115,24 @@ namespace Tree {
         }
 
         /**
-         * Test if a given particle is out of its cell and return true if it is the case, false otherwise.
+         * Test if a given particle is out of the overall area and return true if it is the case, false otherwise.
          *
          * @return true if particle out of its boundaries, false otherwise
          */
-        bool is_out_boundaries() {
-            if (this->get_parent() == nullptr)
+        bool is_out_boundaries(Type dim) {
+            Type pos = this->get(POS);
+
+            if (abs(pos.x) > 0.5 * dim.x)
                 return true;
 
-            Type distance = this->get(POS) - this->get_parent()->get(CENTER);
-            Type cell_size = this->get_parent()->get(DIM);
-
-            if (2 * abs(distance.x) > cell_size.x)
-                return true;
-
-            if (2 * abs(distance.y) > cell_size.y)
+            if (abs(pos.y) > 0.5 * dim.y)
                 return true;
 
 #if NB_DIM == DIM_3
-            if (2 * abs(distance.z) > cell_size.z)
+            if (abs(pos.z) > 0.5 * dim.z)
                 return true;
 #endif
             return false;
-        }
-
-        /**
-         * Update cell total mass and center of mass.
-         *
-         * @param add boolean value to add (true) or remove (false) attribute values of the particle
-         */
-        void update_cell(bool add) override {
-            auto head = this->get_parent();
-
-            if (add) {
-                float mass_tot = head->get_mass() + this->get_mass();
-
-                head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() + this->get(POS) * this->get_mass())
-                                    / mass_tot);
-                head->set_mass(mass_tot);
-            } else {
-                float mass_tot = max(head->get_mass() - this->get_mass(), (float) EPSILON);
-
-                /** Avoid having a division by zero */
-                if (mass_tot == 0.0f)
-                    head->set(MASS_POS, head->get(CENTER));
-                else
-                    head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
-                                        / mass_tot);
-
-                head->set_mass(mass_tot);
-            }
-        }
-
-        /**
-         * Update tree to change place of particles out of original boundaries. Override by the child
-         * class.
-         *
-         * @return int value if the given particle/cell has to be delete (-1) or no (0)
-         */
-        int update_tree() override {
-            bool first = true;
-
-            /** continue to go up in level to find right cell for our particle */
-            while (this->is_out_boundaries()) {
-                int nb_particles = 0;
-
-                if (this->get_parent() == nullptr)
-                    return -1;
-
-                /** delete pointer from cell to particle */
-                if (first) {
-                    this->get_parent()->clear_next();
-                    first = false;
-                } else {
-                    /** Check for empty level */
-                    for (auto n : this->get_parent()->get_next()) {
-                        if (!(n->get_next().empty())) {
-                            nb_particles++;
-                            break;
-                        }
-                    }
-
-                    /** delete empty level of the parent node */
-                    if (nb_particles == 0)
-                        this->get_parent()->del_level();
-                }
-
-                this->update_cell(false);
-                this->set_parent(this->get_parent()->get_parent());
-            }
-
-            this->update_cell(false);
-            this->get_parent()->store_particle(this, nullptr);
-            return 0;
         }
 
     private:
