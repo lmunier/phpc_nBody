@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-std=c++17 -g -Wall -O0
+CXXFLAGS=-pg -g -O3 -ftree-vectorize -std=c++11
 LDFLAGS=
 LDLIBS=
 
@@ -17,11 +17,8 @@ OBJECTS  := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 RM = rm -f
 
-CD = cd doc/
-CD_ = cd..
-
 $(BINDIR)/$(TARGET): $(OBJECTS)
-	$(CXX) $(OBJECTS) $(LDFLAGS) -o $@
+	$(CXX) $(CXXFLAGS) $(OBJECTS) $(LDFLAGS) -o $@
 	@echo "Linking complete!"
 
 $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp

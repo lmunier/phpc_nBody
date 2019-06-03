@@ -154,7 +154,7 @@ void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir)
             if (n != nullptr)
                 generate_file(n, 1000 * iter * DELTA_T, dir);
 #endif
-        } else if (n->get_type() == CellT) {
+        } else {
             update_particles_pos(n, iter, dir);
         }
     }
@@ -170,7 +170,7 @@ void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir)
 template <typename Type>
 void update_particles_tree(AbstractType<Type>* root){
     auto next = root->get_next();
-
+    
     for (auto it = next.begin(); it != next.end(); ++it) {
         /** If next element is empty or is already deleted */
         if ((*it) == nullptr || !(*it)->get_state()) {
@@ -182,7 +182,7 @@ void update_particles_tree(AbstractType<Type>* root){
                     delete *it;
             }
         } /** If next element is a cell */
-        else if ((*it)->get_type() == CellT) {
+        else {
             update_particles_tree(*it);
         }
     }
@@ -261,6 +261,18 @@ int main(int argc, char *argv[]) {
         barnes_hut(Vector3f(width, height, depth), "../output");
 #endif
     auto stop = high_resolution_clock::now();
+
+    /** Print all the parameters */
+    cout << "Barnes-Hut" << endl;
+    cout << "Epsilon " << EPSILON << endl;
+    cout << "Nb particles " << NB_PARTICLES << endl;
+    cout << "Nb dimensions " << NB_DIM << endl;
+    cout << "Side " << SIDE << endl;
+    cout << "Shift " << SHIFT << endl;
+    cout << "Occupation percentage " << OCCUPATION_PERC << endl;
+    cout << "Maximum mass " << MASS_MAX << endl;
+    cout << "Delta t " << DELTA_T << endl;
+    cout << "Nb iterations " << ITERATIONS << endl;
 
     cout << duration_cast<microseconds>(stop - start).count() << endl;
 
