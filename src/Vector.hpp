@@ -40,7 +40,7 @@ public:
      *
      * @param val coordinate on all axis
      */
-    explicit Vector2(Type val = 0.0f) : x(val), y(val) {}
+    __host__ __device__ explicit Vector2(Type val = 0.0f) : x(val), y(val) {}
 
     /**
      * Surcharge  constructor of the 2D vector.
@@ -48,7 +48,7 @@ public:
      * @param x_val coordinate on x axis
      * @param y_val coordinate on y axis
      */
-    Vector2(Type x_val, Type y_val) :
+    __host__ __device__ Vector2(Type x_val, Type y_val) :
             x(x_val),
             y(y_val) {}
 
@@ -56,7 +56,7 @@ public:
     /**
      * Print the coordinates of the given vector in the console.
      */
-    virtual void print() {
+    __host__ __device__ virtual void print() {
         printf("Vector2f : %f \t %f\n", this->x, this->y);
     }
 
@@ -65,7 +65,7 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    virtual string to_file() {
+    __host__ virtual string to_file() {
         string coord;
         coord = to_string(this->x) + "," + to_string(this->y) + "\n";
 
@@ -78,11 +78,11 @@ public:
      *
      * @return norm of the given vector
      */
-    virtual Type norm() {
+    __device__ virtual Type norm() {
         return sqrtf(this->x*this->x + this->y*this->y);
     }
 
-    Vector2<Type> pow(Type power) {
+    __host__ __device__ Vector2<Type> pow(Type power) {
         Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = powf(this->x, power);
@@ -97,7 +97,7 @@ public:
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector2<Type> operator- (Vector2<Type> vec) {
+    __host__ __device__ Vector2<Type> operator- (Vector2<Type> vec) {
         Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x - vec.x;
@@ -117,7 +117,7 @@ public:
      * @param vec vector to add to the given vector
      * @return given vector plus vec argument
      */
-    Vector2<Type> operator+ (Vector2<Type> vec) {
+    __host__ __device__ Vector2<Type> operator+ (Vector2<Type> vec) {
         Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x + vec.x;
@@ -132,7 +132,7 @@ public:
      * @param scalar Type to add to the given vector
      * @return given vector plus scalar argument on each dimension
      */
-    Vector2<Type> operator+ (Type scalar) {
+    __host__ __device__ Vector2<Type> operator+ (Type scalar) {
         Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x + scalar;
@@ -147,7 +147,7 @@ public:
      * @param Type value to multiply the given vector
      * @return given vector multiply by scalar argument
      */
-    Vector2<Type> operator* (Type scalar) {
+    __host__ __device__ Vector2<Type> operator* (Type scalar) {
         Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = scalar * this->x;
@@ -162,7 +162,7 @@ public:
      * @param Type value to divide the given vector
      * @return given vector divide by scalar argument
      */
-    Vector2<Type> operator/ (Type scalar) {
+    __host__ __device__ Vector2<Type> operator/ (Type scalar) {
         Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x / scalar;
@@ -177,7 +177,7 @@ public:
      * @param Type value to divide the given vector
      * @return given vector divide by vec argument
      */
-    Vector2<Type> operator/ (Vector2<Type> vec) {
+    __host__ __device__ Vector2<Type> operator/ (Vector2<Type> vec) {
         Vector2<Type> tmp = Vector2<Type>();
 
         tmp.x = this->x / vec.x;
@@ -212,7 +212,7 @@ public:
      *
      * @param val coordinate on all axis
      */
-    explicit Vector3(Type val = 0.0f) :
+    __host__ __device__ explicit Vector3(Type val = 0.0f) :
             Vector2f(val, val),
             z(val) {}
 
@@ -223,7 +223,7 @@ public:
      * @param y_val coordinate on y axis
      * @param y_val coordinate on z axis
      */
-    Vector3(Type x_val, Type y_val, Type z_val) :
+    __host__ __device__ Vector3(Type x_val, Type y_val, Type z_val) :
         Vector2f(x_val, y_val),
         z(z_val) {}
 
@@ -231,7 +231,7 @@ public:
     /**
      * Override the print function of Vector2 to print 3D vectors.
      */
-    void print() override {
+    __host__ __device__ void print() override {
         printf("Vector3f : %f \t %f \t %f\n", this->x, this->y, this->z);
     }
 
@@ -240,7 +240,7 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    string to_file() override {
+    __host__ string to_file() override {
         string coord;
         coord = to_string(this->x) + "," + to_string(this->y) + "," + to_string(this->z) + "\n";
 
@@ -252,11 +252,11 @@ public:
      *
      * @return norm of the given vector
      */
-    Type norm() override {
+    __device__ Type norm() override {
         return sqrtf(this->x*this->x + this->y*this->y + this->z*this->z);
     }
 
-    Vector3<Type> pow(Type power) {
+    __device__ Vector3<Type> pow(Type power) {
         Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = powf(this->x, power);
@@ -272,7 +272,7 @@ public:
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
      */
-    Vector3<Type> operator- (Vector3<Type> vec) {
+    __host__ __device__ Vector3<Type> operator- (Vector3<Type> vec) {
         Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x - vec.x;
@@ -296,7 +296,7 @@ public:
      * @param vec vector to add to the given vector
      * @return given vector plus vec argument
      */
-    Vector3<Type> operator+ (Vector3<Type> vec) {
+    __host__ __device__ Vector3<Type> operator+ (Vector3<Type> vec) {
         Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x + vec.x;
@@ -312,7 +312,7 @@ public:
      * @param scalar Type to add to the given vector
      * @return given vector plus scalar argument on each dimension
      */
-    Vector3<Type> operator+ (Type scalar) {
+    __host__ __device__ Vector3<Type> operator+ (Type scalar) {
         Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x + scalar;
@@ -328,7 +328,7 @@ public:
      * @param Type value to multiply the given vector
      * @return given vector multiply by scalar argument
      */
-    Vector3<Type> operator* (Type scalar) {
+    __host__ __device__ Vector3<Type> operator* (Type scalar) {
         Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = scalar * this->x;
@@ -344,7 +344,7 @@ public:
      * @param Type value to divide the given vector
      * @return given vector divide by scalar argument
      */
-    Vector3<Type> operator/ (Type scalar) {
+    __host__ __device__ Vector3<Type> operator/ (Type scalar) {
         Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x / scalar;
@@ -360,7 +360,7 @@ public:
      * @param Type value to divide the given vector
      * @return given vector divide by vec argument
      */
-    Vector3<Type> operator/ (Vector3<Type> vec) {
+    __host__ __device__ Vector3<Type> operator/ (Vector3<Type> vec) {
         Vector3<Type> tmp = Vector3<Type>();
 
         tmp.x = this->x / vec.x;

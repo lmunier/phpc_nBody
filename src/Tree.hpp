@@ -47,19 +47,19 @@ namespace Tree {
         /**
          * Destructor function to safely delete all pointers in this class and set state of AbstractType to false.
          */
-        virtual ~AbstractType() {
+        __host__ virtual ~AbstractType() {
             this->_state = false;
             delete this->_parent;
         };
 
-        void *operator new(size_t len) {
+        __host__ void *operator new(size_t len) {
             void *ptr;
             cudaMallocManaged(&ptr, len);
             cudaDeviceSynchronize();
             return ptr;
         }
 
-        void operator delete(void *ptr) {
+        __host__ void operator delete(void *ptr) {
             cudaDeviceSynchronize();
             cudaFree(ptr);
         }
@@ -69,28 +69,28 @@ namespace Tree {
          *
          * @return state of the particle/cell already deleted (false) or not (true)
          */
-        bool get_state() { return this->_state; }
+        __host__ __device__ bool get_state() { return this->_state; }
 
         /**
          * Virtual function to be override in child class. Override by the child class.
          *
          * @return my_type which is the type of the class
          */
-        virtual my_type get_type() = 0;
+        __host__ __device__ virtual my_type get_type() = 0;
 
         /**
          * Return the mass of the given particle/cell.
          *
          * @return _m attribute of the given particle/cell
          */
-        float get_mass() { return this->_m; }
+        __host__ __device__ float get_mass() { return this->_m; }
 
         /**
          * Return the parent node of the given particle/cell.
          *
          * @return _parent attribute of the given particle/cell
          */
-        AbstractType<Type>* get_parent() { return this->_parent; }
+        __host__ __device__ AbstractType<Type>* get_parent() { return _parent; }
 
         /**
          * Virtual method to return the attribute vector array of pointer on the next particle/cells in the tree
@@ -98,7 +98,7 @@ namespace Tree {
          *
          * @return _next attribute vector array of pointer on the next particle/cells in the tree data-structure
          */
-        virtual vector< AbstractType<Type>* > get_next() {};
+        __host__ __device__ virtual thrust::device_vector<AbstractType < Type>* >* get_next() {}
 
         /**
          * Virtual method to get the value of an attribute of the given particle/cell. Override by the child class.
@@ -106,21 +106,21 @@ namespace Tree {
          * @param p of the chosen attribute to be return
          * @return the value of the chosen attribute
          */
-        virtual Type get(property p) = 0;
+        __host__ __device__ virtual Type get(property p) = 0;
 
         /**
          * Set _m attribute value with the new mass
          *
          * @param mass new float value to set the attribute
          */
-        void set_mass(float mass) { this->_m = mass; }
+        __host__ __device__ void set_mass(float mass) { this->_m = mass; }
 
         /**
          * Set _parent attribute value with the new parent node
          *
          * @param parent new pointer on AbstractType<Type> value to set the attribute
          */
-        void set_parent(AbstractType<Type>* parent) { this->_parent = parent; }
+        __host__ __device__ void set_parent(AbstractType<Type>* parent) { this->_parent = parent; }
 
         /**
          * Virtual method to set attribute value of the chosen attribute for a given particle/cell. Override by the
@@ -129,7 +129,7 @@ namespace Tree {
          * @param p enum value of the attribute
          * @param vec new vector value to set the attribute
          */
-        virtual void set(property p, Type vec) {};
+        __host__ __device__ virtual void set(property p, Type vec) {};
 
         /**
          * Find the index of the cell in the _next dynamic array where the particle should be stored.
@@ -147,7 +147,7 @@ namespace Tree {
          *
          * @param particle where the load is applied
          */
-        virtual void compute_load(AbstractType<Type>* particle) = 0;
+        __device__ virtual void compute_load(AbstractType<Type>* particle) = 0;
 
         /**
          * Virtual method to update velocity and position of a given particle for a given load on it. Reset load after
@@ -182,7 +182,7 @@ namespace Tree {
          * Virtual method to subdivide a node in 2^NB_DIM sub-cells and fill _next attribute with a pointer to each
          * sub-cell. Override by the child class.
          */
-        virtual void subdivide_tree() {};
+        //__global__ virtual void subdivide_tree() {};
 
         /**
          * Virtual method store particle in the tree. Override by the child class.
