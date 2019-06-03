@@ -22,6 +22,11 @@
 #include <vector>              /**< dynamic arrays */
 #include <math.h>              /**< different maths functions */
 
+#include <thrust/device_vector.h>
+#include <thrust/transform_reduce.h>
+#include <thrust/transform.h>
+#include <thrust/functional.h>
+
 #include <chrono>              /**< deal with time */
 
 /**
@@ -42,7 +47,7 @@ using namespace std::chrono;
 #define DIM_3 3                        /**< number of dimension in 3D */
 #define NB_DIM DIM_3                   /**< number of dimension chosen for the project */
 
-#define NB_PARTICLES 1000                /**< number of particles for the project */
+#define NB_PARTICLES 10                /**< number of particles for the project */
 #define SIDE 1000                      /**< side of the area considered for the project */
 #define SHIFT SIDE/3.0f                 /**< shift each particles to unbalanced probability of particles position */
 #define OCCUPATION_PERC 0.5f            /**< percentage of occupation to avoid particle go easily outside boundaries */

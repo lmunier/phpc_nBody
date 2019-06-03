@@ -53,7 +53,7 @@ using namespace Tree;
  * @param vec vector to give the Type of the vector to the template function
  */
 template <typename Type>
-void generate_data(vector< Particle<Type>* >* particles, Type size) {
+void generate_data(thrust::device_vector< Particle<Type>* >* particles, Type size) {
     float p_m = MASS_MAX;
     float x_rnd, p_x = 0.5f * OCCUPATION_PERC * size.x;
     float y_rnd, p_y = 0.5f * OCCUPATION_PERC * size.y;
@@ -102,18 +102,29 @@ void generate_data(vector< Particle<Type>* >* particles, Type size) {
  * @param part_loaded pointer to the current particle for which the load is computed
  */
 template <typename Type>
-void update_load(vector< Particle<Type>* >* particles) {
+void update_load(thrust::device_vector< Particle<Type>* >* particles) {
     for (auto p_i : *particles) {
         Type load = Type();
 
         for (auto p_j : *particles) {
-            Type tmp = p_j->get(POS) - p_i->get(POS);
+            Type tmp = (*p_j).get(POS) - (*p_i).get(POS);
             float d = max(tmp.norm(), EPSILON);
-            load = load + tmp * (G * p_i->get_mass() * p_j->get_mass()) / d;
+            load = load + tmp * (G * (*p_i).get_mass() * (*p_j).get_mass()) / d;
         }
 
-        p_i->set(LOAD, load);
+        (*p_i).set(LOAD, load);
     }
+}
+
+struct square {
+    __host__ __device__ float operator()(float x) {
+        return x * x;
+    }
+};
+    
+__host__ __device__ float snrm2_fast (thrust::device_vector<float>& x) {
+    // with fusion
+    return sqrt( thrust::transform_reduce(x.begin(), x.end(), square(), 0.0f, thrust::plus<float>()));
 }
 
 /**
@@ -174,47 +185,49 @@ void generate_file(AbstractType<Type>* particle, int millis_time, const string& 
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
-    int width = SIDE, height = SIDE;
+    /*int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
 
-#if NB_DIM == DIM_2
     string dir = "";
 
     if (argv[1])
         dir = argv[1];
     else
-        dir = "../output";
-    
+        dir = "../output";*/
+
+    thrust::device_vector<float> d_vec(10);
+    thrust::generate(d_vec.begin(), d_vec.end(), rand);
+
+    float result = snrm2_fast(d_vec);
+    cudaDeviceSynchronize();
+
+    //printf("%f\n", result);
+
+/*#if NB_DIM == DIM_2
     Vector2f size = Vector2f(width, height);
-    vector< Particle<Vector2f>* > particles{};
+    thrust::device_vector< Particle<Vector2f>* > particles{};
     generate_data(&particles, size);
 
     for (int i = 1; i <= ITERATIONS; i++) {
         update_load(&particles);
-        update_particles_pos(&particles, size, i, dir);
+        //update_particles_pos(&particles, size, i, dir);
     }
 #elif NB_DIM == DIM_3
     int depth = SIDE;
-    string dir = "";
-    
-    if (argv[1])
-        dir = argv[1];
-    else
-        dir = "../output";
 
     Vector3f size = Vector3f(width, height, depth);
-    vector< Particle<Vector3f>* > particles{};
+    thrust::device_vector< Particle<Vector3f>* > particles{};
     generate_data(&particles, Vector3f(width, height, depth));
 
     for (int i = 1; i <= ITERATIONS; i++) {
         update_load(&particles);
-        update_particles_pos(&particles, size, i, dir);
+        //update_particles_pos(&particles, size, i, dir);
     }
-#endif
-    auto stop = high_resolution_clock::now();
+#endif*/
+    //auto stop = high_resolution_clock::now();
 
     /** Print all the parameters */
-    cout << "Brut force" << endl;
+    /*cout << "Brut force" << endl;
     cout << "Epsilon " << EPSILON << endl;
     cout << "Nb particles " << NB_PARTICLES << endl;
     cout << "Nb dimensions " << NB_DIM << endl;
@@ -225,7 +238,7 @@ int main(int argc, char *argv[]) {
     cout << "Delta t " << DELTA_T << endl;
     cout << "Nb iterations " << ITERATIONS << endl;
 
-    cout << duration_cast<microseconds>(stop - start).count() << endl;
+    cout << duration_cast<microseconds>(stop - start).count() << endl;*/
 
     return 0;
 }
