@@ -139,6 +139,41 @@ __global__ void process_mass(float* rnd, int nb_elements){
 // }
 // #endif
 
+__global__ void compute_load(float* pos, float* load, float* mass, int idx_i) {
+    unsigned int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (j < NB_PARTICLES) {
+        float d = 0.0f;
+
+        for (unsigned int k = 0; k < NB_DIM; k++)
+            d += (pos[NB_DIM * j + k] - pos[NB_DIM * idx_i + k]) * (pos[NB_DIM * j + k] - pos[NB_DIM * idx_i + k]);
+
+        float norm = max(sqrt(d), EPSILON);
+
+        for (unsigned int k = 0; k < NB_DIM; k++)
+            load[NB_DIM * j + k] += d * G * mass[j + k] * mass[idx_i + k] / norm;
+    }
+}
+
+__global__ void update_particles(float* pos, float* vel, float* load, float* mass) {
+    int threadsPerBlock = THREADS;
+    int blocksPerGrid = (NB_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    __syncthreads();
+
+    if (i < NB_PARTICLES) {
+        compute_load<<< blocksPerGrid, threadsPerBlock >>>(pos, load, mass, i);
+        cudaDeviceSynchronize();
+
+        for(unsigned int i = 0; i < NB_PARTICLES; i++) {
+            printf("%1.4f %1.4f %1.4f \t %1.4f \n", load[i * NB_DIM], load[i * NB_DIM + 1], load[i * NB_DIM + 2], mass[i]);
+        }
+    }
+
+    __syncthreads();
+}
+
 /**
  * Main function, compute time to solve problem and store size of the overall area where particle are studied.
  *
@@ -222,6 +257,7 @@ int main(int argc, char *argv[]) {
 
     blocksPerGrid = (NB_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
     process_mass<<< blocksPerGrid, threadsPerBlock >>>(d_mass, NB_PARTICLES);
+    update_particles<<< blocksPerGrid, threadsPerBlock >>>(d_pos, d_vel, d_load, d_mass);
 
     // copy result from device to host
     cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);

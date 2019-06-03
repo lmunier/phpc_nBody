@@ -36,7 +36,7 @@
 #define DIM_3 3                        /**< number of dimension in 3D */
 #define NB_DIM DIM_3                   /**< number of dimension chosen for the project */
 
-#define NB_PARTICLES 200000                /**< number of particles for the project */
+#define NB_PARTICLES 20                /**< number of particles for the project */
 #define SIDE 1000.0f                      /**< side of the area considered for the project */
 #define SIDE_2f SIDE / 2.0f                      /**< side of the area considered for the project */
 #define SIDE_4f SIDE / 4.0f                      /**< side of the area considered for the project */
@@ -48,7 +48,7 @@
 #define BLOCK_SIZE 2
 
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
-#define ITERATIONS 1000                /**< number of iterations to solve nBody problem */
+#define ITERATIONS 10                /**< number of iterations to solve nBody problem */
 
 /**
  * @enum property of the particle
