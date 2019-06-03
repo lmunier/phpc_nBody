@@ -32,7 +32,7 @@ using namespace std::chrono;
 /**
  * Different defines to have constants for the overall project.
  */
-#define PRINT                          /**< if it is defined, print value in terminal and csv file */
+//#define PRINT                          /**< if it is defined, print value in terminal and csv file */
 
 #define G 6.67408e-11f                  /**< gravitational general constant */
 #define EPSILON 0.000005f               /**< to avoid collision between particles */
