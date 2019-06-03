@@ -41,36 +41,32 @@
 #define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__);\
     return EXIT_FAILURE;}} while(0)
+
 #define CURAND_CALL(x) do { if((x)!=CURAND_STATUS_SUCCESS) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__);\
     return EXIT_FAILURE;}} while(0)
+  
+__global__ void process_pos(float* rnd, int nb_elements){
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
 
-
-/**
- * Generate NB_PARTICLES particles and call function to store them.
- *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer to initial Cell of the tree to construct
- * @param vec vector to give the Type of the vector to the template function
- */
-__global__ void generate_data(float* pos, float* mass, float* rnd) {
-    float p_m = MASS_MAX;
-    float p_pos = 0.5f * OCCUPATION_PERC * SIDE;
-
-    unsigned int i_max = (NB_DIM * NB_PARTICLES) / (blockDim.x * gridDim.x);
-    unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
-
-    for (unsigned int i = 0; i < i_max; i++) {
+    if (i < nb_elements) {
         /** Generate random coordinate for a new particle and shift it if it stays in boundaries
          * to stress application */
-        for (unsigned int j = 0; j < NB_DIM; j++) {
-            if(fabs(rnd[(i + i_max) * NB_DIM + j] - SHIFT) < p_pos)
-                rnd[(i + i_max) * NB_DIM + j] -= SHIFT;
+        rnd[i] *= SIDE_2f;
+        rnd[i] -= SIDE_4f;
 
-            pos[(i + i_max) * NB_DIM + j] = rnd[(i + i_max) * NB_DIM + j];
-        }
-        
-        mass[NB_DIM * NB_PARTICLES + i + i_max] = rnd[NB_DIM * NB_PARTICLES + i + i_max];
+        if (abs(rnd[i] - SHIFT) > SIDE_4f)
+            rnd[i] -= SHIFT;
+    }
+}
+  
+__global__ void process_mass(float* rnd, int nb_elements){
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < nb_elements) {
+        /** Generate random coordinate for a new particle and shift it if it stays in boundaries
+         * to stress application */
+        rnd[i] *= MASS_MAX;
     }
 }
 
@@ -207,42 +203,31 @@ int main(int argc, char *argv[]) {
     cudaEventCreate(&start);
     cudaEventRecord(start, NULL);
 
-    // setup execution parameters
-    threads = dim3(BLOCK_SIZE);
-    grid = dim3(BLOCK_SIZE);
-
     // copy host memory to device
     cudaMemcpy(d_pos, h_pos, mem_size_pos, cudaMemcpyHostToDevice);
     cudaMemcpy(d_vel, h_vel, mem_size_vel, cudaMemcpyHostToDevice);
 
     // Generate random numbers on device
-    float *devData, *hostData;
-    size_t n = (NB_DIM + 1) * NB_PARTICLES;
     curandGenerator_t gen;
 
-    /* Allocate n floats on host */
-    hostData = (float *) calloc(n, sizeof(float));
+    curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT);     /* Create pseudo-random number generator */
+    curandSetPseudoRandomGeneratorSeed(gen, 1234ULL);           /* Set seed */
+    curandGenerateUniform(gen, d_pos, NB_DIM * NB_PARTICLES);   /* Generate floats pos on device */
+    curandGenerateUniform(gen, d_mass, NB_PARTICLES);   /* Generate floats mass on device */
 
-    /* Allocate n floats on device */
-    CUDA_CALL(cudaMalloc((void **) &devData, n * sizeof(float)));
+    // setup execution parameters
+    int threadsPerBlock = THREADS;
+    int blocksPerGrid = (NB_DIM * NB_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
+    process_pos<<< blocksPerGrid, threadsPerBlock >>>(d_pos, NB_DIM * NB_PARTICLES);
 
-    /* Create pseudo-random number generator */
-    CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT));
-    
-    /* Set seed */
-    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, 1234ULL));
-
-    /* Generate n floats on device */
-    CURAND_CALL(curandGenerateUniform(gen, devData, n));
-    
-    generate_data<<< grid, threads >>>(d_pos, d_mass, devData);
+    blocksPerGrid = (NB_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
+    process_mass<<< blocksPerGrid, threadsPerBlock >>>(d_mass, NB_PARTICLES);
 
     // copy result from device to host
+    cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_vel, d_vel, mem_size_vel, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_mass, d_mass, mem_size_mass, cudaMemcpyDeviceToHost);
     cudaMemcpy(h_load, d_load, mem_size_load, cudaMemcpyDeviceToHost);
-
-    /* Copy device memory to host */
-    CUDA_CALL(cudaMemcpy(hostData, devData, n * sizeof(float),
-        cudaMemcpyDeviceToHost));
 
     // stop and destroy timer
     cudaEventCreate(&stop);
@@ -250,6 +235,7 @@ int main(int argc, char *argv[]) {
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&msecTotal, start, stop);
     //printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
+    printf("Processing time: %f (ms)\n", msecTotal);
 
     /** Print all the parameters */
     std::cout << "Brut force" << std::endl;
@@ -263,11 +249,10 @@ int main(int argc, char *argv[]) {
     std::cout << "Delta t " << DELTA_T << std::endl;
     std::cout << "Nb iterations " << ITERATIONS << std::endl;
 
-    /* Show result */
-    for(unsigned int i = 0; i < n; i++) {
-        printf("%1.4f ", hostData[i]);
-    }
-    printf("\n");
+    // /* Show result */
+    // for(unsigned int i = 0; i < NB_PARTICLES; i++) {
+    //     printf("%1.4f %1.4f %1.4f \t %1.4f \n", h_pos[i * NB_DIM], h_pos[i * NB_DIM + 1], h_pos[i * NB_DIM + 2], h_mass[i]);
+    // }
 
     //std::cout << exec_time << std::endl;
 
@@ -282,11 +267,7 @@ int main(int argc, char *argv[]) {
     cudaFree(d_load);
     cudaFree(d_mass);
 
-    CURAND_CALL(curandDestroyGenerator(gen));
-    CUDA_CALL(cudaFree(devData));
-    free(hostData);
-
-    cudaThreadExit();
+    curandDestroyGenerator(gen);
     exit(EXIT_SUCCESS);
 
     return 0;
