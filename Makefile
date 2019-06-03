@@ -1,9 +1,9 @@
 CXX=g++
 NVCC=nvcc
 CXXFLAGS= -std=c++11 -g -Wall -O0
-CUDAFLAGS= -std=c++11 -arch=sm_35 -rdc=true 
+CUDAFLAGS= -g -std=c++11 -arch=sm_35 -rdc=true -O0
 LDFLAGS=
-LIBS= -lcudadevrt
+LIBS= -lcudadevrt -lcurand
 
 TARGET=nbody
 

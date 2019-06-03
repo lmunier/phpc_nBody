@@ -38,12 +38,13 @@
 #include "constants.hpp"
 #include "Particle.hpp"
 
-/**
- * @namespace std to simplify code implementation
- * @namespace Tree to simplify code implementation
- */
-using namespace std;
-using namespace Tree;
+#define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
+    printf("Error at %s:%d\n",__FILE__,__LINE__);\
+    return EXIT_FAILURE;}} while(0)
+#define CURAND_CALL(x) do { if((x)!=CURAND_STATUS_SUCCESS) { \
+    printf("Error at %s:%d\n",__FILE__,__LINE__);\
+    return EXIT_FAILURE;}} while(0)
+
 
 /**
  * Generate NB_PARTICLES particles and call function to store them.
@@ -52,45 +53,24 @@ using namespace Tree;
  * @param root pointer to initial Cell of the tree to construct
  * @param vec vector to give the Type of the vector to the template function
  */
-template <typename Type>
-void generate_data(thrust::device_vector< Particle<Type>* >* particles, Type size) {
+__global__ void generate_data(float* pos, float* mass, float* rnd) {
     float p_m = MASS_MAX;
-    float x_rnd, p_x = 0.5f * OCCUPATION_PERC * size.x;
-    float y_rnd, p_y = 0.5f * OCCUPATION_PERC * size.y;
+    float p_pos = 0.5f * OCCUPATION_PERC * SIDE;
 
-    random_device rd;
-    uniform_real_distribution<float> dist_m(0, p_m);
-    uniform_real_distribution<float> dist_x(-p_x, p_x);
-    uniform_real_distribution<float> dist_y(-p_y, p_y);
+    unsigned int i_max = (NB_DIM * NB_PARTICLES) / (blockDim.x * gridDim.x);
+    unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 
-    for (int i = 0; i < NB_PARTICLES; i++) {
+    for (unsigned int i = 0; i < i_max; i++) {
         /** Generate random coordinate for a new particle and shift it if it stays in boundaries
          * to stress application */
-        x_rnd = dist_x(rd);
-        if(fabs(x_rnd - SHIFT) < p_x)
-            x_rnd -= SHIFT;
+        for (unsigned int j = 0; j < NB_DIM; j++) {
+            if(fabs(rnd[(i + i_max) * NB_DIM + j] - SHIFT) < p_pos)
+                rnd[(i + i_max) * NB_DIM + j] -= SHIFT;
 
-        y_rnd = dist_y(rd);
-        if(fabs(y_rnd - SHIFT) < p_y)
-            y_rnd -= SHIFT;
-
-#if NB_DIM == DIM_3
-        float z_rnd, p_z = 0.5f * OCCUPATION_PERC * size.z;
-        uniform_real_distribution<float> dist_z(-p_z, p_z);
-
-        z_rnd = dist_z(rd);
-        if(fabs(z_rnd - SHIFT) < p_z)
-            z_rnd -= SHIFT;
-#endif
-
-        /** Create new particle */
-#if NB_DIM == DIM_2
-        auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd));
-#elif NB_DIM == DIM_3
-        auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd, z_rnd));
-#endif
-
-        particles->push_back(new_particle);
+            pos[(i + i_max) * NB_DIM + j] = rnd[(i + i_max) * NB_DIM + j];
+        }
+        
+        mass[NB_DIM * NB_PARTICLES + i + i_max] = rnd[NB_DIM * NB_PARTICLES + i + i_max];
     }
 }
 
@@ -101,31 +81,19 @@ void generate_data(thrust::device_vector< Particle<Type>* >* particles, Type siz
  * @param head pointer to the current cell of the tree
  * @param part_loaded pointer to the current particle for which the load is computed
  */
-template <typename Type>
-void update_load(thrust::device_vector< Particle<Type>* >* particles) {
-    for (auto p_i : *particles) {
-        Type load = Type();
+// void update_load(thrust::device_vector< Particle<Type>* >* particles) {
+//     for (auto p_i : *particles) {
+//         Type load = Type();
 
-        for (auto p_j : *particles) {
-            Type tmp = (*p_j).get(POS) - (*p_i).get(POS);
-            float d = max(tmp.norm(), EPSILON);
-            load = load + tmp * (G * (*p_i).get_mass() * (*p_j).get_mass()) / d;
-        }
+//         for (auto p_j : *particles) {
+//             Type tmp = (*p_j).get(POS) - (*p_i).get(POS);
+//             float d = max(tmp.norm(), EPSILON);
+//             load = load + tmp * (G * (*p_i).get_mass() * (*p_j).get_mass()) / d;
+//         }
 
-        (*p_i).set(LOAD, load);
-    }
-}
-
-struct square {
-    __host__ __device__ float operator()(float x) {
-        return x * x;
-    }
-};
-    
-__host__ __device__ float snrm2_fast (thrust::device_vector<float>& x) {
-    // with fusion
-    return sqrt( thrust::transform_reduce(x.begin(), x.end(), square(), 0.0f, thrust::plus<float>()));
-}
+//         (*p_i).set(LOAD, load);
+//     }
+// }
 
 /**
  * Update position and velocity for each particle. Generate a csv file with all the position if needed.
@@ -134,19 +102,18 @@ __host__ __device__ float snrm2_fast (thrust::device_vector<float>& x) {
  * @param root pointer on the node of the previous cell
  * @param iter current iteration of the solution
  */
-template <typename Type>
-void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int iter, const string& dir){
-    for (auto p : *particles) {
-        p->update_vel_pos();
+// void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int iter, const string& dir){
+//     for (auto p : *particles) {
+//         p->update_vel_pos();
 
-        if (p->is_out_boundaries(dim))
-            delete p;
+//         if (p->is_out_boundaries(dim))
+//             delete p;
 
-#ifdef PRINT
-        generate_file(p, 1000 * iter * DELTA_T, dir);
-#endif
-    }
-}
+// #ifdef PRINT
+//         generate_file(p, 1000 * iter * DELTA_T, dir);
+// #endif
+//     }
+// }
 
 /**
  * If PRINT is defined, generate a csv file to display animation of the result in external software (e.g. paraview).
@@ -155,27 +122,26 @@ void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int it
  * @param particle pointer on the particle to write in csv file
  * @param millis_time timestep to change filename and save chronology
  */
-#ifdef PRINT
-template <typename Type>
-void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
-    ofstream csv_file;
-    string filename = dir + "/out_" + to_string(millis_time) + ".csv";
+// #ifdef PRINT
+// void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
+//     ofstream csv_file;
+//     string filename = dir + "/out_" + to_string(millis_time) + ".csv";
 
-    csv_file.open(filename, ios::app);
+//     csv_file.open(filename, ios::app);
 
-    /** Check if file is empty to write the title of each column */
-    if (csv_file.tellp() == 0) {
-#if NB_DIM == DIM_2
-        csv_file << "x,y\n";
-#elif NB_DIM == DIM_3
-        csv_file << "x,y,z\n";
-#endif
-    }
+//     /** Check if file is empty to write the title of each column */
+//     if (csv_file.tellp() == 0) {
+// #if NB_DIM == DIM_2
+//         csv_file << "x,y\n";
+// #elif NB_DIM == DIM_3
+//         csv_file << "x,y,z\n";
+// #endif
+//     }
 
-    csv_file << particle->get(POS).to_file();
-    csv_file.close();
-}
-#endif
+//     csv_file << particle->get(POS).to_file();
+//     csv_file.close();
+// }
+// #endif
 
 /**
  * Main function, compute time to solve problem and store size of the overall area where particle are studied.
@@ -185,60 +151,143 @@ void generate_file(AbstractType<Type>* particle, int millis_time, const string& 
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
-    /*int width = SIDE, height = SIDE;
-    auto start = high_resolution_clock::now();
+    // Utilities to track the time
+    cudaEvent_t start;
+    cudaEvent_t stop;
+    float msecTotal(0.0f);
+    
+    float part_mass[NB_PARTICLES] = {0.0f};
+    float part_pos[NB_DIM * NB_PARTICLES] = {0.0f};
+    float part_vel[NB_DIM * NB_PARTICLES] = {0.0f};
+    float part_load[NB_DIM * NB_PARTICLES] = {0.0f};
 
-    string dir = "";
+    // Filename to store particles
+    std::string dir("");
 
     if (argv[1])
         dir = argv[1];
     else
-        dir = "../output";*/
+        dir = "../output";
 
-    thrust::device_vector<float> d_vec(10);
-    thrust::generate(d_vec.begin(), d_vec.end(), rand);
+    // allocate host memory for pos, vel and load
+    unsigned int mem_size_pos = sizeof(part_pos);
+    float* h_pos = (float*) malloc(mem_size_pos);
+    
+    unsigned int mem_size_vel = sizeof(part_vel);
+    float* h_vel = (float*) malloc(mem_size_vel);
+    
+    unsigned int mem_size_mass = sizeof(part_mass);
+    float* h_mass = (float*) malloc(mem_size_mass);
+    //float flop = 2 * (float)WC * (float)HC * (float)WA;
+    
+    // allocate device memory
+    float* d_pos;
+    cudaMalloc((void**) &d_pos, mem_size_pos);
+    cudaMemset(d_pos, 0.0f, mem_size_pos);
 
-    float result = snrm2_fast(d_vec);
-    cudaDeviceSynchronize();
+    float* d_vel;
+    cudaMalloc((void**) &d_vel, mem_size_vel);
+    cudaMemset(d_vel, 0.0f, mem_size_vel);
 
-    //printf("%f\n", result);
+    float* d_mass;
+    cudaMalloc((void**) &d_mass, mem_size_mass);
+    cudaMemset(d_mass, 0.0f, mem_size_mass);
 
-/*#if NB_DIM == DIM_2
-    Vector2f size = Vector2f(width, height);
-    thrust::device_vector< Particle<Vector2f>* > particles{};
-    generate_data(&particles, size);
+    // allocate device memory for result
+    unsigned int mem_size_load = sizeof(part_load);
+    float* d_load;
+    cudaMalloc((void**) &d_load, mem_size_load);
 
-    for (int i = 1; i <= ITERATIONS; i++) {
-        update_load(&particles);
-        //update_particles_pos(&particles, size, i, dir);
-    }
-#elif NB_DIM == DIM_3
-    int depth = SIDE;
+    // allocate host memory for the result
+    float* h_load = (float*) malloc(mem_size_load);
 
-    Vector3f size = Vector3f(width, height, depth);
-    thrust::device_vector< Particle<Vector3f>* > particles{};
-    generate_data(&particles, Vector3f(width, height, depth));
+    dim3 threads, grid;
 
-    for (int i = 1; i <= ITERATIONS; i++) {
-        update_load(&particles);
-        //update_particles_pos(&particles, size, i, dir);
-    }
-#endif*/
-    //auto stop = high_resolution_clock::now();
+    // create and start timer
+    cudaEventCreate(&start);
+    cudaEventRecord(start, NULL);
+
+    // setup execution parameters
+    threads = dim3(BLOCK_SIZE);
+    grid = dim3(BLOCK_SIZE);
+
+    // copy host memory to device
+    cudaMemcpy(d_pos, h_pos, mem_size_pos, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_vel, h_vel, mem_size_vel, cudaMemcpyHostToDevice);
+
+    // Generate random numbers on device
+    float *devData, *hostData;
+    size_t n = (NB_DIM + 1) * NB_PARTICLES;
+    curandGenerator_t gen;
+
+    /* Allocate n floats on host */
+    hostData = (float *) calloc(n, sizeof(float));
+
+    /* Allocate n floats on device */
+    CUDA_CALL(cudaMalloc((void **) &devData, n * sizeof(float)));
+
+    /* Create pseudo-random number generator */
+    CURAND_CALL(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT));
+    
+    /* Set seed */
+    CURAND_CALL(curandSetPseudoRandomGeneratorSeed(gen, 1234ULL));
+
+    /* Generate n floats on device */
+    CURAND_CALL(curandGenerateUniform(gen, devData, n));
+    
+    generate_data<<< grid, threads >>>(d_pos, d_mass, devData);
+
+    // copy result from device to host
+    cudaMemcpy(h_load, d_load, mem_size_load, cudaMemcpyDeviceToHost);
+
+    /* Copy device memory to host */
+    CUDA_CALL(cudaMemcpy(hostData, devData, n * sizeof(float),
+        cudaMemcpyDeviceToHost));
+
+    // stop and destroy timer
+    cudaEventCreate(&stop);
+    cudaEventRecord(stop, NULL);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&msecTotal, start, stop);
+    //printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
 
     /** Print all the parameters */
-    /*cout << "Brut force" << endl;
-    cout << "Epsilon " << EPSILON << endl;
-    cout << "Nb particles " << NB_PARTICLES << endl;
-    cout << "Nb dimensions " << NB_DIM << endl;
-    cout << "Side " << SIDE << endl;
-    cout << "Shift " << SHIFT << endl;
-    cout << "Occupation percentage " << OCCUPATION_PERC << endl;
-    cout << "Maximum mass " << MASS_MAX << endl;
-    cout << "Delta t " << DELTA_T << endl;
-    cout << "Nb iterations " << ITERATIONS << endl;
+    std::cout << "Brut force" << std::endl;
+    std::cout << "Epsilon " << EPSILON << std::endl;
+    std::cout << "Nb particles " << NB_PARTICLES << std::endl;
+    std::cout << "Nb dimensions " << NB_DIM << std::endl;
+    std::cout << "Side " << SIDE << std::endl;
+    std::cout << "Shift " << SHIFT << std::endl;
+    std::cout << "Occupation percentage " << OCCUPATION_PERC << std::endl;
+    std::cout << "Maximum mass " << MASS_MAX << std::endl;
+    std::cout << "Delta t " << DELTA_T << std::endl;
+    std::cout << "Nb iterations " << ITERATIONS << std::endl;
 
-    cout << duration_cast<microseconds>(stop - start).count() << endl;*/
+    /* Show result */
+    for(unsigned int i = 0; i < n; i++) {
+        printf("%1.4f ", hostData[i]);
+    }
+    printf("\n");
+
+    //std::cout << exec_time << std::endl;
+
+    // clean up memory
+    free(h_pos);
+    free(h_vel);
+    free(h_load);
+    free(h_mass);
+    
+    cudaFree(d_pos);
+    cudaFree(d_vel);
+    cudaFree(d_load);
+    cudaFree(d_mass);
+
+    CURAND_CALL(curandDestroyGenerator(gen));
+    CUDA_CALL(cudaFree(devData));
+    free(hostData);
+
+    cudaThreadExit();
+    exit(EXIT_SUCCESS);
 
     return 0;
 }

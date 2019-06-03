@@ -19,20 +19,9 @@
 #include <cstdlib>             /**< C standard general utilities library */
 #include <cstdint>             /**< integer types */
 #include <random>              /**< introduces random number generation facilities */
-#include <vector>              /**< dynamic arrays */
 #include <math.h>              /**< different maths functions */
 
-#include <thrust/device_vector.h>
-#include <thrust/transform_reduce.h>
-#include <thrust/transform.h>
-#include <thrust/functional.h>
-
-#include <chrono>              /**< deal with time */
-
-/**
- * @namespace std::chrono to simplify notation on time duration computing
- */
-using namespace std::chrono;
+#include <curand.h>
 
 /**
  * Different defines to have constants for the overall project.
@@ -52,6 +41,8 @@ using namespace std::chrono;
 #define SHIFT SIDE/3.0f                 /**< shift each particles to unbalanced probability of particles position */
 #define OCCUPATION_PERC 0.5f            /**< percentage of occupation to avoid particle go easily outside boundaries */
 #define MASS_MAX 10e10f                 /**< maximum of mass value for a particle */
+
+#define BLOCK_SIZE 32
 
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
 #define ITERATIONS 1000                /**< number of iterations to solve nBody problem */
