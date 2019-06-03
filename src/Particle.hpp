@@ -172,11 +172,13 @@ namespace Tree {
          * @return true if particle out of its boundaries, false otherwise
          */
         bool is_out_boundaries() {
-            if (this->get_parent() == nullptr)
+            auto parent = this->get_parent();
+
+            if (parent == nullptr)
                 return true;
 
-            Type distance = this->get(POS) - this->get_parent()->get(CENTER);
-            Type cell_size = this->get_parent()->get(DIM);
+            Type distance = this->get(POS) - parent->get(CENTER);
+            Type cell_size = parent->get(DIM);
 
             if (2 * abs(distance.x) > cell_size.x)
                 return true;
@@ -199,21 +201,22 @@ namespace Tree {
         void update_cell(bool add) override {
             auto head = this->get_parent();
 
-            if (add) {
-                float mass_tot = head->get_mass() + this->get_mass();
+            float mass_this = this->get_mass();
+            float mass_head = head->get_mass();
 
-                head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() + this->get(POS) * this->get_mass())
-                                    / mass_tot);
+            if (add) {
+                float mass_tot = mass_head + mass_this;
+
+                head->set(MASS_POS, (head->get(MASS_POS) * mass_head + this->get(POS) * mass_this) / mass_tot);
                 head->set_mass(mass_tot);
             } else {
-                float mass_tot = max(head->get_mass() - this->get_mass(), (float) EPSILON);
+                float mass_tot = max(mass_head - mass_this, (float) EPSILON);
 
                 /** Avoid having a division by zero */
                 if (mass_tot == 0.0f)
                     head->set(MASS_POS, head->get(CENTER));
                 else
-                    head->set(MASS_POS, (head->get(MASS_POS) * head->get_mass() - this->get(POS) * this->get_mass())
-                                        / mass_tot);
+                    head->set(MASS_POS, (head->get(MASS_POS) * mass_head - this->get(POS) * mass_this) / mass_tot);
 
                 head->set_mass(mass_tot);
             }
@@ -231,17 +234,18 @@ namespace Tree {
             /** continue to go up in level to find right cell for our particle */
             while (this->is_out_boundaries()) {
                 int nb_particles = 0;
+                auto parent = this->get_parent();
 
-                if (this->get_parent() == nullptr)
+                if (parent == nullptr)
                     return -1;
 
                 /** delete pointer from cell to particle */
                 if (first) {
-                    this->get_parent()->clear_next();
+                    parent->clear_next();
                     first = false;
                 } else {
                     /** Check for empty level */
-                    for (auto n : this->get_parent()->get_next()) {
+                    for (auto n : parent->get_next()) {
                         if (!(n->get_next().empty())) {
                             nb_particles++;
                             break;
@@ -250,11 +254,11 @@ namespace Tree {
 
                     /** delete empty level of the parent node */
                     if (nb_particles == 0)
-                        this->get_parent()->del_level();
+                        parent->del_level();
                 }
 
                 this->update_cell(false);
-                this->set_parent(this->get_parent()->get_parent());
+                this->set_parent(parent->get_parent());
             }
 
             this->update_cell(false);

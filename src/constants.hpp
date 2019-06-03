@@ -51,7 +51,7 @@ using namespace std::chrono;
 #define LOAD_TYPE 0                   /**< load to use in the implementation GRAVITY == 0 or LENNARD_JONES == 1 */
 
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
-#define ITERATIONS 50                /**< number of iterations to solve nBody problem */
+#define ITERATIONS 1000                /**< number of iterations to solve nBody problem */
 
 /**
  * @enum property of the particle
