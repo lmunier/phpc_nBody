@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     
     unsigned int mem_size_mass = sizeof(float) * NB_PARTICLES;
     float* h_mass = (float*) malloc(mem_size_mass);
-    float flop = (float) * (NB_PARTICLES * NB_PARTICLES + NB_PARTICLES) * DIM_3;
+    //float flop = (float) * (NB_PARTICLES * NB_PARTICLES + NB_PARTICLES) * DIM_3;
     
     // allocate device memory
     float* d_pos;

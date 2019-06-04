@@ -30,7 +30,6 @@
 
 #define G 6.67408e-11f                  /**< gravitational general constant */
 #define EPSILON 0.000005f               /**< to avoid collision between particles */
-#define BH_THETA 0.5f                   /**< Barnes-Hut threshold to consider particles as a unique one */
 
 #define DIM_3 3                        /**< number of dimension in 3D */
 
@@ -42,8 +41,7 @@
 #define OCCUPATION_PERC 0.5f            /**< percentage of occupation to avoid particle go easily outside boundaries */
 #define MASS_MAX 10e10f                 /**< maximum of mass value for a particle */
 
-#define THREADS 256
-#define BLOCK_SIZE 2
+#define MAX_THREADS 1024
 
 #define DELTA_T 0.1f                   /**< duration of each update timestep */
 #define ITERATIONS 1000                /**< number of iterations to solve nBody problem */
