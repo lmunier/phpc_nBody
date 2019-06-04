@@ -35,9 +35,6 @@
  * @include Tree.hpp library to create a quadtree/octree data structure and interact on different cells/particles
  */
 #include "constants.hpp"
-#include "Particle.hpp"
-
-#include <limits>
 
 #define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__);\
