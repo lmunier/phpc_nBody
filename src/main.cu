@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&msecTotal, start, stop);
 
-    printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
+    //printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
     printf("Processing time: %f (ms)\n", msecTotal);
 
     /** Print all the parameters */
