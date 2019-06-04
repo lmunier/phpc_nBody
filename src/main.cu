@@ -52,7 +52,7 @@ __global__ void process_pos(float* rnd, int nb_elements){
         rnd[i] *= SIDE_2f;
         rnd[i] -= SIDE_4f;
 
-        if (abs(rnd[i] - SHIFT) > SIDE_4f)
+        if (abs(rnd[i] - SHIFT) < SIDE_4f)
             rnd[i] -= SHIFT;
     }
 }
@@ -221,11 +221,14 @@ int main(int argc, char *argv[]) {
         update_particles(d_pos, d_vel, d_acc, d_mass);
         cudaDeviceSynchronize();
 
+#ifdef PRINT
         // copy result from device to host
         cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);
         generate_file(h_pos, k * DELTA_T * 1000, dir);
+#endif
     }
 
+    cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);
     cudaMemcpy(h_vel, d_vel, mem_size_vel, cudaMemcpyDeviceToHost);
     cudaMemcpy(h_mass, d_mass, mem_size_mass, cudaMemcpyDeviceToHost);
     cudaMemcpy(h_acc, d_acc, mem_size_acc, cudaMemcpyDeviceToHost);
@@ -240,15 +243,16 @@ int main(int argc, char *argv[]) {
     printf("Processing time: %f (ms)\n", msecTotal);
 
     /** Print all the parameters */
-    printf("-- Brut force --\n");
-    printf("Epsilon %f\n", EPSILON);
-    printf("Nb particles %f\n", NB_PARTICLES);
-    printf("Side %f\n", SIDE);
-    printf("Shift %f\n", SHIFT);
-    printf("Occupation percentage %f\n", OCCUPATION_PERC);
-    printf("Maximum mass %f\n", MASS_MAX);
-    printf( "Delta t %f\n", DELTA_T);
-    printf("Nb iterations %f\n", ITERATIONS);
+    std::cout << "-- Brut force --" << std::endl;
+    std::cout << "Epsilon " << EPSILON << std::endl;
+    std::cout << "Nb particles " << NB_PARTICLES << std::endl;
+    std::cout << "Nb dimensions " << DIM_3 << std::endl;
+    std::cout << "Side " << SIDE << std::endl;
+    std::cout << "Shift " << SHIFT << std::endl;
+    std::cout << "Occupation percentage " << OCCUPATION_PERC << std::endl;
+    std::cout << "Maximum mass " << MASS_MAX << std::endl;
+    std::cout << "Delta t " << DELTA_T << std::endl;
+    std::cout << "Nb iterations " << ITERATIONS << std::endl;
 
     // clean up memory
     free(h_pos);
