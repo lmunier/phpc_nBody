@@ -14,3 +14,9 @@ doc/*
 # build
 build/
 nbody
+
+# Python venv
+python/venv/
+
+# Cache vscode
+.vscode/

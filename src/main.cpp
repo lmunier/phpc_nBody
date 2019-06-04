@@ -152,7 +152,7 @@ void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir)
 
 #ifdef PRINT
             if (n != nullptr)
-                generate_file(n, 1000 * iter * DELTA_T, dir);
+                generate_file(n, 100 * iter * DELTA_T, dir);
 #endif
         } else {
             update_particles_pos(n, iter, dir);
@@ -251,14 +251,14 @@ int main(int argc, char *argv[]) {
     if (argv[1])
         barnes_hut(Vector2f(width, height), argv[1]);
     else
-        barnes_hut(Vector2f(width, height), "../output");
+        barnes_hut(Vector2f(width, height), "output");
 #elif NB_DIM == DIM_3
     int depth = SIDE;
     
     if (argv[1])
         barnes_hut(Vector3f(width, height, depth), argv[1]);
     else
-        barnes_hut(Vector3f(width, height, depth), "../output");
+        barnes_hut(Vector3f(width, height, depth), "output");
 #endif
     auto stop = high_resolution_clock::now();
 
