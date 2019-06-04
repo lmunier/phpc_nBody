@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     
     unsigned int mem_size_mass = sizeof(float) * NB_PARTICLES;
     float* h_mass = (float*) malloc(mem_size_mass);
-    //float flop = 2 * (float)WC * (float)HC * (float)WA;
+    float flop = (float) * (NB_PARTICLES * NB_PARTICLES + NB_PARTICLES) * DIM_3;
     
     // allocate device memory
     float* d_pos;
@@ -238,7 +238,8 @@ int main(int argc, char *argv[]) {
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&msecTotal, start, stop);
-    //printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
+
+    printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
     printf("Processing time: %f (ms)\n", msecTotal);
 
     /** Print all the parameters */
