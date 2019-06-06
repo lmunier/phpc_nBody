@@ -46,9 +46,9 @@
 using namespace std;
 using namespace Tree;
 
-int NB_PARTICLES;
-int SIDE;
-float SHIFT;
+int NB_PARTICLES;                /**< number of particles for the project */
+float SIDE;                      /**< side of the area considered for the project */
+float SHIFT;                     /**< Shift value to unbalanced uniformity of particles creation */
 
 /**
  * Generate NB_PARTICLES particles and call function to store them.
@@ -250,7 +250,7 @@ void generate_file(AbstractType<Type>* particle, int millis_time, const string& 
 int main(int argc, char *argv[]) {
     cin >> NB_PARTICLES;
     SIDE = NB_PARTICLES;
-    SHIFT = SIDE/3.0f;
+    SHIFT = SIDE / 3.0f;
 
     int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
