@@ -32,7 +32,11 @@
 #define EPSILON 0.000005f               /**< to avoid collision between particles */
 
 #define DIM_3 3                        /**< number of dimension in 3D */
-
+#define NB_PARTICLES 1000                /**< number of particles for the project */
+#define SIDE NB_PARTICLES                     /**< side of the area considered for the project */
+#define SIDE_2f SIDE / 2.0f                  /**< 1/2 side of the area considered for the project */
+#define SIDE_4f SIDE / 4.0f                   /**< 1/4 side of the area considered for the project */
+#define SHIFT SIDE / 3.0f                     /**< Shift value to unbalanced uniformity of particles creation */
 #define OCCUPATION_PERC 0.5f            /**< percentage of occupation to avoid particle go easily outside boundaries */
 #define MASS_MAX 10e5f                 /**< maximum of mass value for a particle */
 
