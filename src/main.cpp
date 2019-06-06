@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
     cout << "Delta t " << DELTA_T << endl;
     cout << "Nb iterations " << ITERATIONS << endl;
 
-    cout << "Execution time duration " << duration_cast<microseconds>(stop - start).count() << endl;
+    cout << "Execution time duration (ms) " << duration_cast<milliseconds>(stop - start).count() << endl;
 
     return 0;
 }
