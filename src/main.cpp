@@ -139,7 +139,7 @@ void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int it
             delete p;
 
 #ifdef PRINT
-        generate_file(p, 1000 * iter * DELTA_T, dir);
+        generate_file(p, iter, dir);
 #endif
     }
 }
@@ -149,14 +149,14 @@ void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int it
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param particle pointer on the particle to write in csv file
- * @param millis_time timestep to change filename and save chronology
+ * @param iter iteration to change filename
  * @param dir filepath to the directory to store results
  */
 #ifdef PRINT
 template <typename Type>
-void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
+void generate_file(AbstractType<Type>* particle, int iter, const string& dir) {
     ofstream csv_file;
-    string filename = dir + "/out_" + to_string(millis_time) + ".csv";
+    string filename = dir + "/out_" + to_string(iter) + ".csv";
 
     csv_file.open(filename, ios::app);
 
