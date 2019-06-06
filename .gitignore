@@ -14,3 +14,8 @@ doc/*
 # build
 build/
 nbody
+
+# Python venv
+python/venv/
+
+.vscode/

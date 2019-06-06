@@ -1,0 +1,11 @@
+Barnes-Hut
+Epsilon 0.005
+Nb particles 10
+Nb dimensions 3
+Side 10
+Shift 3.33333
+Occupation percentage 0.5
+Maximum mass 1e+11
+Delta t 0.01
+Nb iterations 1000
+2390657
