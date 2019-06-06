@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @author Munier Louis
- * @date 30.05.19
+ * @date 04.06.19
  * @version 1.0
  *
  * Main file of the nBody project.
@@ -22,10 +22,8 @@
  *
  * @section Implementation
  *
- * The solution is implemented using Barnes-Hut algorithm and quadtree/octree data-structure. The particularity is that
- * the user can choose differents parameters as define :
- * - NB_DIM : set at DIM_2 or DIM_3 to choose between 2D and 3D problem solution
- * - NB_PARTICLES : number of particles
+ * Here the solution is implemented using Brute-force algorithm to compare with sequential Barnes-Hut and parallelized brute-force.
+ * The user can choose differents parameters as define :
  * - PRINT : save solution in csv file, at each time-step, to display solution animation in programs (e.g. paraview)
  * - DELTA_T : time-step of each iteration
  */
@@ -38,6 +36,14 @@
 #include "constants.hpp"
 #include "Particle.hpp"
 
+
+/**
+ * Gobal variables to have dynamic testing without recompiling each time.
+ */
+int NB_PARTICLES;                /**< number of particles for the project */
+float SIDE;                      /**< side of the area considered for the project */
+float SHIFT;                     /**< Shift value to unbalanced uniformity of particles creation */
+
 /**
  * @namespace std to simplify code implementation
  * @namespace Tree to simplify code implementation
@@ -49,8 +55,8 @@ using namespace Tree;
  * Generate NB_PARTICLES particles and call function to store them.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer to initial Cell of the tree to construct
- * @param vec vector to give the Type of the vector to the template function
+ * @param particles pointer to the list of all the particles
+ * @param size vector to have the size of the working area
  */
 template <typename Type>
 void generate_data(vector< Particle<Type>* >* particles, Type size) {
@@ -95,11 +101,10 @@ void generate_data(vector< Particle<Type>* >* particles, Type size) {
 }
 
 /**
- * Update the load applied to a particle by implementation a Depth First Search on the quadtree/octree data-structure.
+ * Update the load applied to a particle by implementing a double for loop on each particle.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param head pointer to the current cell of the tree
- * @param part_loaded pointer to the current particle for which the load is computed
+ * @param particles pointer to the list of all the particles
  */
 template <typename Type>
 void update_load(vector< Particle<Type>* >* particles) {
@@ -120,8 +125,10 @@ void update_load(vector< Particle<Type>* >* particles) {
  * Update position and velocity for each particle. Generate a csv file with all the position if needed.
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
- * @param root pointer on the node of the previous cell
+ * @param particles pointer to the list of all the particles
+ * @param dim dimensions of the overall working area
  * @param iter current iteration of the solution
+ * @param dir filepath to the directory to store results if it is needed
  */
 template <typename Type>
 void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int iter, const string& dir){
@@ -143,6 +150,7 @@ void update_particles_pos(vector< Particle<Type>* >* particles, Type dim, int it
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param particle pointer on the particle to write in csv file
  * @param millis_time timestep to change filename and save chronology
+ * @param dir filepath to the directory to store results
  */
 #ifdef PRINT
 template <typename Type>
@@ -174,47 +182,37 @@ void generate_file(AbstractType<Type>* particle, int millis_time, const string& 
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
+    // Take number of particles to simulate
+    cin >> NB_PARTICLES;
+    SIDE = NB_PARTICLES;
+    SHIFT = SIDE / 3.0f;
+
     int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
 
 #if NB_DIM == DIM_2
-    string dir = "";
-
-    if (argv[1])
-        dir = argv[1];
-    else
-        dir = "../output";
+    string dir = "output";
     
     Vector2f size = Vector2f(width, height);
     vector< Particle<Vector2f>* > particles{};
     generate_data(&particles, size);
-
-    for (int i = 1; i <= ITERATIONS; i++) {
-        update_load(&particles);
-        update_particles_pos(&particles, size, i, dir);
-    }
 #elif NB_DIM == DIM_3
     int depth = SIDE;
-    string dir = "";
-    
-    if (argv[1])
-        dir = argv[1];
-    else
-        dir = "../output";
+    string dir = "output";
 
     Vector3f size = Vector3f(width, height, depth);
     vector< Particle<Vector3f>* > particles{};
-    generate_data(&particles, Vector3f(width, height, depth));
+    generate_data(&particles, size);
+#endif
 
     for (int i = 1; i <= ITERATIONS; i++) {
         update_load(&particles);
         update_particles_pos(&particles, size, i, dir);
     }
-#endif
     auto stop = high_resolution_clock::now();
 
     /** Print all the parameters */
-    cout << "Brut force" << endl;
+    cout << "-- Brut force sequential --" << endl;
     cout << "Epsilon " << EPSILON << endl;
     cout << "Nb particles " << NB_PARTICLES << endl;
     cout << "Nb dimensions " << NB_DIM << endl;
