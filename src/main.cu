@@ -23,7 +23,8 @@
  * @section Implementation
  *
  * Here the solution is implemented using Brute-force algorithm to have a working parallelization of the algorithm with
- * CUDA and compare with both sequential Barnes-Hut and brute-force. The user can choose differents parameters as define :
+ * CUDA and compare with both sequential Barnes-Hut and brute-force without parallel implementation. The user can choose
+ * differents parameters as define :
  * - NB_PARTICLES : number of particles
  * - PRINT : save solution in csv file, at each time-step, to display solution animation in programs (e.g. paraview)
  * - DELTA_T : time-step of each iteration
@@ -31,19 +32,16 @@
 
 /**
  * @include constants.hpp which contains all the needed project's constants/includes
- * @include Vector.hpp custom library to have minimal vector implementation
- * @include Tree.hpp library to create a quadtree/octree data structure and interact on different cells/particles
  */
 #include "constants.hpp"
 
-#define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
-    printf("Error at %s:%d\n",__FILE__,__LINE__);\
-    return EXIT_FAILURE;}} while(0)
-
-#define CURAND_CALL(x) do { if((x)!=CURAND_STATUS_SUCCESS) { \
-    printf("Error at %s:%d\n",__FILE__,__LINE__);\
-    return EXIT_FAILURE;}} while(0)
-
+/**
+ * __global__ parallelized function to process the random generation of the particle positions. It is done to stress
+ * application.
+ * 
+ * @param rnd values generated for particle positions in x, y and z
+ * @param nb_elements to avoid process too much time the same values due to parallelization
+ */
 __global__ void process_pos(float* rnd, int nb_elements){
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -56,7 +54,14 @@ __global__ void process_pos(float* rnd, int nb_elements){
             rnd[i] -= SHIFT;
     }
 }
-  
+ 
+/**
+ * __global__ parallelized function to process the random generation of the mass value. It is done to have value
+ * between 0 and MASS_MAX.
+ * 
+ * @param rnd values generated for particle mass
+ * @param nb_elements to avoid process too much time the same values due to parallelization
+ */
 __global__ void process_mass(float* rnd, int nb_elements){
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -68,14 +73,14 @@ __global__ void process_mass(float* rnd, int nb_elements){
 /**
  * If PRINT is defined, generate a csv file to display animation of the result in external software (e.g. paraview).
  *
- * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param particle pointer on the particle to write in csv file
- * @param millis_time timestep to change filename and save chronology
+ * @param iter iteration to change filename
+ * @param dir to have filepath where write all the values
  */
 #ifdef PRINT
-__host__ void generate_file(float* particle, int millis_time, const std::string& dir) {
+__host__ void generate_file(float* particle, int iter, const std::string& dir) {
     std::ofstream csv_file;
-    std::string filename = dir + "/out_" + std::to_string(millis_time) + ".csv";
+    std::string filename = dir + "/out_" + std::to_string(iter) + ".csv";
 
     csv_file.open(filename);
     csv_file << "x,y,z\n";
@@ -87,6 +92,14 @@ __host__ void generate_file(float* particle, int millis_time, const std::string&
 }
 #endif
 
+/**
+ * __global__ parallelized function to compute the acceleration for each particle. Each particle have his own thread
+ * and compute the load applied on it from each of the others particle.
+ *
+ * @param pos pointer on the position of each particle in device memory
+ * @param acc pointer on the acceleration of each particle in device memory
+ * @param mass pointer on the mass of each particle in device memory
+ */
 __global__ void kernel_compute_acc(float* pos, float* acc, float* mass) {
     float r[DIM_3] = {0.0f};
     unsigned int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -111,7 +124,13 @@ __global__ void kernel_compute_acc(float* pos, float* acc, float* mass) {
 }
 
 /**
- * Update velocity and position of a given particle for a given acceleration on it. Reset acceleration after update.
+ * __global__ parallelized function to compute the update position and velocity for each particle. Each particle have his
+ * own thread and compute the load applied on it from each of the others particle.
+ *
+ * @param pos pointer on the position of each particle in device memory
+ * @param vel pointer on the velocity of each particle in device memory
+ * @param acc pointer on the acceleration of each particle in device memory
+ * @param mass pointer on the mass of each particle in device memory
  */
 __global__ void kernel_update_pos_vel(float* pos, float* vel, float* acc, float* mass) {
     unsigned int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -135,6 +154,16 @@ __global__ void kernel_update_pos_vel(float* pos, float* vel, float* acc, float*
     }
 }
 
+/**
+ * __host__ function that call both comput_acc and update_pos_vel functions. It Allocate also the number of block needed
+ * to compute all the values. A synchronization function is also called to avoid having unfinished computation on a block
+ * before calling the second function.
+ *
+ * @param pos pointer on the position of each particle in device memory
+ * @param vel pointer on the velocity of each particle in device memory
+ * @param acc pointer on the acceleration of each particle in device memory
+ * @param mass pointer on the mass of each particle in device memory
+ */
 __host__ void update_particles(float* pos, float* vel, float* acc, float* mass) {
     dim3 block(min(MAX_THREADS, NB_PARTICLES));
     kernel_compute_acc<<< 1, block >>>(pos, acc, mass);
@@ -145,6 +174,7 @@ __host__ void update_particles(float* pos, float* vel, float* acc, float* mass) 
 
 /**
  * Main function, compute time to solve problem and store size of the overall area where particle are studied.
+ * In this function, all the memory is also allocated on the host and device part.
  *
  * @param argc default input in c++ main function
  * @param argv default input in c++ main function
@@ -157,12 +187,7 @@ int main(int argc, char *argv[]) {
     float msecTotal(0.0f);
 
     // Filename to store particles
-    std::string dir("");
-
-    if (argv[1])
-        dir = argv[1];
-    else
-        dir = "output";
+    std::string dir("output");
 
     // allocate host memory for pos, vel and mass
     unsigned int mem_size_pos = sizeof(float) * DIM_3 * NB_PARTICLES;
@@ -224,7 +249,7 @@ int main(int argc, char *argv[]) {
 #ifdef PRINT
         // copy result from device to host
         cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);
-        generate_file(h_pos, k * DELTA_T * 1000, dir);
+        generate_file(h_pos, k, dir);
 #endif
     }
 
@@ -243,7 +268,7 @@ int main(int argc, char *argv[]) {
     printf("Processing time: %f (ms)\n", msecTotal);
 
     /** Print all the parameters */
-    std::cout << "-- Brut force --" << std::endl;
+    std::cout << "-- Brut force parallelized --" << std::endl;
     std::cout << "Epsilon " << EPSILON << std::endl;
     std::cout << "Nb particles " << NB_PARTICLES << std::endl;
     std::cout << "Nb dimensions " << DIM_3 << std::endl;
