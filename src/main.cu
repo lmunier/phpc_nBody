@@ -83,13 +83,13 @@ __global__ void process_mass(float* rnd, int nb_elements){
  * If PRINT is defined, generate a csv file to display animation of the result in external software (e.g. paraview).
  *
  * @param particle pointer on the particle to write in csv file
- * @param millis_time timestep to change filename and save chronology
+ * @param iter iteration to change filename
  * @param dir to have filepath where write all the values
  */
 #ifdef PRINT
-__host__ void generate_file(float* particle, int millis_time, const std::string& dir) {
+__host__ void generate_file(float* particle, int iter, const std::string& dir) {
     std::ofstream csv_file;
-    std::string filename = dir + "/out_" + std::to_string(millis_time) + ".csv";
+    std::string filename = dir + "/out_" + std::to_string(iter) + ".csv";
 
     csv_file.open(filename);
     csv_file << "x,y,z\n";
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
 #ifdef PRINT
         // copy result from device to host
         cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);
-        generate_file(h_pos, k * DELTA_T * 1000, dir);
+        generate_file(h_pos, k, dir);
 #endif
     }
 
