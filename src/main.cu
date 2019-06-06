@@ -38,11 +38,11 @@
 /**
  * Gobal variables to have dynamic testing without recompiling each time.
  */
-int NB_PARTICLES                /**< number of particles for the project */
-float SIDE                      /**< side of the area considered for the project */
-float SIDE_2f SIDE / 2.0f       /**< 1/2 side of the area considered for the project */
-float SIDE_4f SIDE / 4.0f       /**< 1/4 side of the area considered for the project */
-float SHIFT SIDE/3.0f           /**< Shift value to unbalanced uniformity of particles creation */
+int NB_PARTICLES;                /**< number of particles for the project */
+float SIDE;                      /**< side of the area considered for the project */
+float SIDE_2f;                   /**< 1/2 side of the area considered for the project */
+float SIDE_4f;                   /**< 1/4 side of the area considered for the project */
+float SHIFT;                     /**< Shift value to unbalanced uniformity of particles creation */
 
 /**
  * __global__ parallelized function to process the random generation of the particle positions. It is done to stress
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     SIDE = NB_PARTICLES;
     SIDE_2f SIDE / 2.0f;
     SIDE_4f SIDE / 4.0f;
-    SHIFT SIDE/3.0f;
+    SHIFT SIDE / 3.0f;
 
     // Utilities to track the time
     cudaEvent_t start;
