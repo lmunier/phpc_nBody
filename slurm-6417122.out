@@ -1,0 +1,13 @@
+
+Currently Loaded Modules:
+  1) gcc/6.4.0
+
+ 
+
+rm -f build/main.o
+Cleaned up objects.
+rm -f ./nbody
+Cleaned up binaries.
+g++ -std=c++11 -g -Wall -O0 -I./src/*.hpp -c src/main.cpp -o build/main.o
+g++ build/main.o  -o nbody
+Linking complete!

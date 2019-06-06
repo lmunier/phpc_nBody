@@ -46,7 +46,7 @@ using namespace std::chrono;
 #define MASS_MAX 10e10f                 /**< maximum of mass value for a particle */
 
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
-#define ITERATIONS 1000                /**< number of iterations to solve nBody problem */
+#define ITERATIONS 500                /**< number of iterations to solve nBody problem */
 
 /**
  * @enum property of the particle

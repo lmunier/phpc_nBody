@@ -1,0 +1,11 @@
+-- Brut force sequential --
+Epsilon 5e-06
+Nb particles 5000
+Nb dimensions 3
+Side 5000
+Shift 1666.67
+Occupation percentage 0.5
+Maximum mass 1e+11
+Delta t 0.01
+Nb iterations 500
+1330975939

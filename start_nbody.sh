@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --nodes=1
-#SBATCH --time=1:0:0
+#SBATCH --time=4:0:0
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:1
 #SBATCH --qos=gpu_free
@@ -14,5 +14,6 @@ module list
 
 make cleanall
 make
-srun  ./nbody
+
+srun  ./nbody < data/100000_part.in > data/100000_results.txt
 
