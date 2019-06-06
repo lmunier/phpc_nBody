@@ -32,8 +32,8 @@
 
 /**
  * @include constants.hpp which contains all the needed project's constants/includes
- * @include Vector.hpp custom library to have minimal vector implementation
- * @include Tree.hpp library to create a quadtree/octree data structure and interact on different cells/particles
+ * @include Cell.hpp class to create cells
+ * @include Particle.hpp class to create particles
  */
 #include "constants.hpp"
 #include "Cell.hpp"
@@ -144,6 +144,7 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param root pointer on the node of the previous cell
  * @param iter current iteration of the solution
+ * @param dir to have filepath where write all the values if needed
  */
 template <typename Type>
 void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir){
@@ -156,7 +157,7 @@ void update_particles_pos(AbstractType<Type>* root, int iter, const string& dir)
 
 #ifdef PRINT
             if (n != nullptr)
-                generate_file(n, 100 * iter * DELTA_T, dir);
+                generate_file(n, iter, dir);
 #endif
         } else {
             update_particles_pos(n, iter, dir);
@@ -197,6 +198,7 @@ void update_particles_tree(AbstractType<Type>* root){
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param vec_dim vector of the dimensions of the overall area where particles are generated
+ * @param dir to have filepath where write all the values if needed
  */
 template <typename Type>
 void barnes_hut(Type vec_dim, const string& dir) {
@@ -216,13 +218,14 @@ void barnes_hut(Type vec_dim, const string& dir) {
  *
  * @tparam Type of the vector, 2D or 3D (and int, float, etc ...)
  * @param particle pointer on the particle to write in csv file
- * @param millis_time timestep to change filename and save chronology
+ * @param iter iteration to change filename
+ * @param dir to have filepath where write all the values
  */
 #ifdef PRINT
 template <typename Type>
-void generate_file(AbstractType<Type>* particle, int millis_time, const string& dir) {
+void generate_file(AbstractType<Type>* particle, int iter, const string& dir) {
     ofstream csv_file;
-    string filename = dir + "/out_" + to_string(millis_time) + ".csv";
+    string filename = dir + "/out_" + to_string(iter) + ".csv";
 
     csv_file.open(filename, ios::app);
 
