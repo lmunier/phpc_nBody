@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     nfr = len(dirs)  # Number of frames
     fps = 90  # Frame per sec
-    side = 200
+    side = 300
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -49,9 +49,9 @@ if __name__ == "__main__":
     # Read file
     xs, ys, zs = read_file(pathfile)
 
-    ax.set_xlim(-side, side)
-    ax.set_ylim(-side, side)
-    ax.set_zlim(-side, side)
+    ax.set_xlim(-side, side/2)
+    ax.set_ylim(-side, side/2)
+    ax.set_zlim(-side, side/2)
     ani = animation.FuncAnimation(fig, update, nfr, fargs=(xs, ys, zs), interval=1000 / fps)
 
     plt.rcParams['animation.html'] = 'html5'

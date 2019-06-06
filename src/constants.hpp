@@ -32,26 +32,24 @@ using namespace std::chrono;
 /**
  * Different defines to have constants for the overall project.
  */
-#define PRINT                          /**< if it is defined, print value in terminal and csv file */
+//#define PRINT                          /**< if it is defined, print value in terminal and csv file */
 
 #define G 6.67408e-11f                  /**< gravitational general constant */
-#define EPSILON 0.000005f               /**< to avoid collision between particles */
+#define EPSILON 0.005f               /**< to avoid collision between particles */
 #define BH_THETA 0.5f                   /**< Barnes-Hut threshold to consider particles as a unique one */
 
 #define DIM_2 2                        /**< number of dimension in 2D */
 #define DIM_3 3                        /**< number of dimension in 3D */
 #define NB_DIM DIM_3                   /**< number of dimension chosen for the project */
 
-#define NB_PARTICLES 10               /**< number of particles for the project */
-#define SIDE 1000                      /**< side of the area considered for the project */
-#define SHIFT SIDE/3.0f                 /**< shift each particles to unbalanced probability of particles position */
+//#define NB_PARTICLES 1000               /**< number of particles for the project */
+//#define SIDE 1000                      /**< side of the area considered for the project */
+//#define SHIFT SIDE/3.0f                 /**< shift each particles to unbalanced probability of particles position */
 #define OCCUPATION_PERC 0.5f            /**< percentage of occupation to avoid particle go easily outside boundaries */
 #define MASS_MAX 10e10f                 /**< maximum of mass value for a particle */
 
-#define LOAD_TYPE 0                   /**< load to use in the implementation GRAVITY == 0 or LENNARD_JONES == 1 */
-
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
-#define ITERATIONS 1000                /**< number of iterations to solve nBody problem */
+#define ITERATIONS 500                /**< number of iterations to solve nBody problem */
 
 /**
  * @enum property of the particle

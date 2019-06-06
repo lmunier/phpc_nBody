@@ -46,6 +46,10 @@
 using namespace std;
 using namespace Tree;
 
+int NB_PARTICLES;
+int SIDE;
+float SHIFT;
+
 /**
  * Generate NB_PARTICLES particles and call function to store them.
  *
@@ -244,26 +248,22 @@ void generate_file(AbstractType<Type>* particle, int millis_time, const string& 
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
+    cin >> NB_PARTICLES;
+    SIDE = NB_PARTICLES;
+    SHIFT = SIDE/3.0f;
+
     int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
-
 #if NB_DIM == DIM_2
-    if (argv[1])
-        barnes_hut(Vector2f(width, height), argv[1]);
-    else
-        barnes_hut(Vector2f(width, height), "output");
+    barnes_hut(Vector2f(width, height), "output");
 #elif NB_DIM == DIM_3
     int depth = SIDE;
-    
-    if (argv[1])
-        barnes_hut(Vector3f(width, height, depth), argv[1]);
-    else
-        barnes_hut(Vector3f(width, height, depth), "output");
+    barnes_hut(Vector3f(width, height, depth), "output");
 #endif
     auto stop = high_resolution_clock::now();
 
     /** Print all the parameters */
-    cout << "Barnes-Hut" << endl;
+    cout << "-- Barnes-Hut --" << endl;
     cout << "Epsilon " << EPSILON << endl;
     cout << "Nb particles " << NB_PARTICLES << endl;
     cout << "Nb dimensions " << NB_DIM << endl;
