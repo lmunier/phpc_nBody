@@ -14,5 +14,5 @@ module list
 make cleanall
 make
 
-srun  ./nbody < data/10000_part.in > data/10000_results.txt
-srun  ./nbody < data/100000_part.in > data/100000_results.txt
+srun  ./nbody < data/8192_part.in
+

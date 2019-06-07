@@ -32,11 +32,11 @@ using namespace std::chrono;
 /**
  * Different defines to have constants for the overall project.
  */
-#define PRINT                          /**< if it is defined, print value in terminal and csv file */
+//#define PRINT                          /**< if it is defined, print value in terminal and csv file */
 
 #define G 6.67408e-11f                  /**< gravitational general constant */
 #define EPSILON 0.005f               /**< to avoid collision between particles */
-#define BH_THETA 0.5f                   /**< Barnes-Hut threshold to consider particles as a unique one */
+#define BH_THETA 1.0f                   /**< Barnes-Hut threshold to consider particles as a unique one */
 
 #define DIM_2 2                        /**< number of dimension in 2D */
 #define DIM_3 3                        /**< number of dimension in 3D */
