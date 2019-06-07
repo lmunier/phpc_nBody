@@ -143,14 +143,14 @@ namespace Tree {
         void compute_load(AbstractType<Type> *particle) override {
             Type tmp = this->get(POS) - particle->get(POS);
             float d = max(tmp.norm(), EPSILON);
-            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
+            particle->set(LOAD, particle->get(LOAD) + tmp * (G * this->get_mass()) / d);
         }
 
         /**
          * Update velocity and position of a given particle for a given load on it. Reset load after update.
          */
         void update_vel_pos() override {
-            Type new_velocity = this->get(LOAD) * (DELTA_T / this->get_mass()) + this->get(VEL);
+            Type new_velocity = this->get(LOAD) * DELTA_T + this->get(VEL);
             Type new_position = new_velocity * DELTA_T + this->get(POS);
 
             this->set(VEL, new_velocity);

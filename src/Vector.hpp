@@ -383,4 +383,14 @@ public:
  */
 typedef Vector3<float> Vector3f;
 
+template<typename Type>
+__global__ void add(Vector3<Type> *vec_i, Vector3<Type> *vec_j) {
+    unsigned int i = threadIdx.x;
+    printf("Coucou\n");
+    printf("%f\n", vec_i->v[i]);
+
+    printf("Hello\n");
+    vec_i->v[i] += vec_j->v[i];
+}
+
 #endif //PROJECT_VECTOR_HPP

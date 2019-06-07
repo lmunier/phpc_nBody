@@ -208,7 +208,7 @@ namespace Tree {
         void compute_load(AbstractType <Type> *particle) override {
             Type tmp = this->get(MASS_POS) - particle->get(POS);
             float d = max(tmp.norm(), EPSILON);
-            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
+            particle->set(LOAD, particle->get(LOAD) + tmp * (G * this->get_mass()) / d);
         }
 
         /**
