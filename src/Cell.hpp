@@ -53,8 +53,8 @@ namespace Tree {
          * Destructor to safely delete all pointer in the Cell element.
          */
         ~Cell() override {
-            this->set_parent(nullptr);
-            delete this->get_parent();
+            this->_parent = nullptr;
+            delete this->_parent;
 
             for (auto n : this->_next)
                 delete n;
@@ -173,7 +173,7 @@ namespace Tree {
                     particle = prev_part;
                     prev_part = nullptr;
 
-                    this->get_parent()->store_particle(particle, prev_part);
+                    this->_parent->store_particle(particle, prev_part);
                 }
             } /** If next element is a particle */
             else if (this->_next[0]->get_type() == ParticleT) {
@@ -181,8 +181,8 @@ namespace Tree {
 
                 /** clear precedent pointers */
                 this->_next.clear();
-                this->set_mass(0.0f);
-                this->set(MASS_POS, Type());
+                this->_m = 0.0f;
+                this->_mass_pos = Type();
                 prev_part->set_parent(nullptr);
 
                 this->subdivide_tree();
@@ -206,9 +206,9 @@ namespace Tree {
          * @param particle where the load is applied
          */
         void compute_load(AbstractType <Type> *particle) override {
-            Type tmp = this->get(MASS_POS) - particle->get(POS);
+            Type tmp = this->_mass_pos - particle->get(POS);
             float d = max(tmp.norm(), EPSILON);
-            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
+            particle->set(LOAD, particle->get(LOAD) + tmp * (G * this->_m) / d);
         }
 
         /**

@@ -191,7 +191,7 @@ namespace Tree {
          */
         virtual void clear_next() {};
 
-    protected:
+    public:
         int _state = 1;                         /**< state of the given particle/cell exist or not */
         float _m = 0.0f;                            /**< mass of the given particle/cell */
         AbstractType<Type>* _parent = nullptr;      /**< parent of the given particle/cell */
