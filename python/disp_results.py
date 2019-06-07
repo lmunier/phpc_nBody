@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     nfr = len(dirs)  # Number of frames
     fps = 90  # Frame per sec
-    side = 300
+    side = 3000
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')

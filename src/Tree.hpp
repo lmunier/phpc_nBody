@@ -48,7 +48,7 @@ namespace Tree {
          * Destructor function to safely delete all pointers in this class and set state of AbstractType to false.
          */
         virtual ~AbstractType() {
-            this->_state = false;
+            this->_state = 0;
             delete this->_parent;
         };
 
@@ -57,7 +57,7 @@ namespace Tree {
          *
          * @return state of the particle/cell already deleted (false) or not (true)
          */
-        bool get_state() { return this->_state; }
+        int get_state() { return this->_state; }
 
         /**
          * Virtual function to be override in child class. Override by the child class.
@@ -192,7 +192,7 @@ namespace Tree {
         virtual void clear_next() {};
 
     protected:
-        bool _state = true;                         /**< state of the given particle/cell exist or not */
+        int _state = 1;                         /**< state of the given particle/cell exist or not */
         float _m = 0.0f;                            /**< mass of the given particle/cell */
         AbstractType<Type>* _parent = nullptr;      /**< parent of the given particle/cell */
     };

@@ -221,6 +221,7 @@ namespace Tree {
          * @return int value if the given particle/cell has to be delete (-1) or no (0)
          */
         int update_tree() override {
+            int val = 0;
             bool first = true;
 
             /** continue to go up in level to find right cell for our particle */
@@ -247,7 +248,8 @@ namespace Tree {
                     /** delete empty level of the parent node */
                     if (nb_particles == 0) {
                         parent->del_level();
-                        return -2;
+                        //printf("Del level\n");
+                        val = -2;
                     }
                 }
 
@@ -257,7 +259,7 @@ namespace Tree {
 
             this->update_cell(false);
             this->get_parent()->store_particle(this, nullptr);
-            return 0;
+            return val;
         }
 
     private:

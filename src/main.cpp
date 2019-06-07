@@ -177,8 +177,9 @@ void update_particles_tree(AbstractType<Type>* root){
     auto next = root->get_next();
     
     for (auto it = next.begin(); it != next.end(); ++it) {
+        //printf("%d\n", (*it)->get_state());
         /** If next element is empty or is already deleted */
-        if ((*it) == nullptr || !(*it)->get_state()) {
+        if ((*it) == nullptr || (*it)->get_state() != 1) {
             return;
         } /** If next element is a particle */
         else if ((*it)->get_type() == ParticleT) {
