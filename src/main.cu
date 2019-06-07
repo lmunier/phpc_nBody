@@ -165,11 +165,12 @@ __global__ void kernel_update_pos_vel(float* pos, float* vel, float* acc, float*
  * @param mass pointer on the mass of each particle in device memory
  */
 __host__ void update_particles(float* pos, float* vel, float* acc, float* mass) {
-    dim3 block(min(MAX_THREADS, NB_PARTICLES));
-    kernel_compute_acc<<< 1, block >>>(pos, acc, mass);
+    int threadsPerBlock = min(MAX_THREADS, DIM_3 * NB_PARTICLES);
+    int blocksPerGrid = (DIM_3 * NB_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
+    kernel_compute_acc<<< blocksPerGrid, threadsPerBlock >>>(pos, acc, mass);
 
     cudaDeviceSynchronize();
-    kernel_update_pos_vel<<< 1, block >>>(pos, vel, acc, mass);
+    kernel_update_pos_vel<<< blocksPerGrid, threadsPerBlock >>>(pos, vel, acc, mass);
 }
 
 /**
@@ -239,8 +240,11 @@ int main(int argc, char *argv[]) {
 
     // setup execution parameters
     int threadsPerBlock = min(MAX_THREADS, DIM_3 * NB_PARTICLES);
-    process_pos<<< 1, threadsPerBlock >>>(d_pos, DIM_3 * NB_PARTICLES);
-    process_mass<<< 1, threadsPerBlock >>>(d_mass, NB_PARTICLES);
+    int blocksPerGrid = (DIM_3 * NB_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
+    process_pos<<< blocksPerGrid, threadsPerBlock >>>(d_pos, DIM_3 * NB_PARTICLES);
+
+    blocksPerGrid = (NB_PARTICLES + threadsPerBlock - 1) / threadsPerBlock;
+    process_mass<<< blocksPerGrid, threadsPerBlock >>>(d_mass, NB_PARTICLES);
 
     for (unsigned int k = 0; k < ITERATIONS; k++) {
         update_particles(d_pos, d_vel, d_acc, d_mass);

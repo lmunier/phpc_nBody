@@ -40,11 +40,11 @@ if __name__ == "__main__":
 
     nfr = len(dirs)  # Number of frames
     fps = 90  # Frame per sec
-    side = 300
+    side = 10000
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    sct, = ax.plot([], [], [], "o", markersize=2)
+    sct, = ax.plot([], [], [], "o", markersize=1)
 
     # Read file
     xs, ys, zs = read_file(pathfile)

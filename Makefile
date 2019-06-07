@@ -1,7 +1,7 @@
 CXX=g++
 NVCC=nvcc
-CXXFLAGS= -std=c++11 -g -Wall -O0
-CUDAFLAGS= -g -std=c++11 -arch=sm_35 -rdc=true -O0
+CXXFLAGS= -std=c++11 -g -Wall -O3 -ftree-vectorize
+CUDAFLAGS= -g -std=c++11 -arch=sm_35 -rdc=true -O3
 LDFLAGS=
 LIBS= -lcudadevrt -lcurand
 
