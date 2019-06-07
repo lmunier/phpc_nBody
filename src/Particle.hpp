@@ -245,8 +245,10 @@ namespace Tree {
                     }
 
                     /** delete empty level of the parent node */
-                    if (nb_particles == 0)
+                    if (nb_particles == 0) {
                         parent->del_level();
+                        return -2;
+                    }
                 }
 
                 this->update_cell(false);

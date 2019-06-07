@@ -178,17 +178,20 @@ void update_particles_tree(AbstractType<Type>* root){
     
     for (auto it = next.begin(); it != next.end(); ++it) {
         /** If next element is empty or is already deleted */
-        if ((*it) != nullptr && (*it)->get_state()) {
-            /** If next element is a particle */
-            if ((*it)->get_type() == ParticleT) {
-                if ((*it)->is_out_boundaries()) {
-                    if ((*it)->update_tree() == -1)
-                        delete *it;
-                }
-            } /** If next element is a cell */
-            else {
-                update_particles_tree(*it);
+        if ((*it) == nullptr || !(*it)->get_state()) {
+            return;
+        } /** If next element is a particle */
+        else if ((*it)->get_type() == ParticleT) {
+            if ((*it)->is_out_boundaries()) {
+                int del = (*it)->update_tree();
+                if (del == -1)
+                    delete *it;
+                else if (del == -2)
+                    return;
             }
+        } /** If next element is a cell */
+        else {
+            update_particles_tree(*it);
         }
     }
 }
