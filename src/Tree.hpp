@@ -47,10 +47,22 @@ namespace Tree {
         /**
          * Destructor function to safely delete all pointers in this class and set state of AbstractType to false.
          */
-        virtual ~AbstractType() {
+        __host__ virtual ~AbstractType() {
             this->_state = false;
             delete this->_parent;
         };
+
+        __host__ void *operator new(size_t len) {
+            void *ptr;
+            cudaMallocManaged(&ptr, len);
+            cudaDeviceSynchronize();
+            return ptr;
+        }
+
+        __host__ void operator delete(void *ptr) {
+            cudaDeviceSynchronize();
+            cudaFree(ptr);
+        }
 
         /**
          * State of the cell, if it is already deleted or not.

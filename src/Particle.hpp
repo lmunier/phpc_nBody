@@ -120,14 +120,14 @@ namespace Tree {
             int idx = 0;
             Type tmp_vec = this->get(POS) - origin;
 
-            if(tmp_vec.x > 0)
+            if(tmp_vec.v[0] > 0)
                 idx += 1;
 
-            if(tmp_vec.y < 0)
+            if(tmp_vec.v[1] < 0)
                 idx += 2;
 
 #if NB_DIM == DIM_3
-            if(tmp_vec.z < 0)
+            if(tmp_vec.v[2] < 0)
                 idx += 4;
 #endif
 
@@ -172,14 +172,14 @@ namespace Tree {
             Type distance = this->get(POS) - parent->get(CENTER);
             Type cell_size = parent->get(DIM);
 
-            if (2 * abs(distance.x) > cell_size.x)
+            if (2 * abs(distance.v[0]) > cell_size.v[0])
                 return true;
 
-            if (2 * abs(distance.y) > cell_size.y)
+            if (2 * abs(distance.v[1]) > cell_size.v[1])
                 return true;
 
 #if NB_DIM == DIM_3
-            if (2 * abs(distance.z) > cell_size.z)
+            if (2 * abs(distance.v[2]) > cell_size.v[2])
                 return true;
 #endif
             return false;

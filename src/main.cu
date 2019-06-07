@@ -46,10 +46,6 @@
 using namespace std;
 using namespace Tree;
 
-int NB_PARTICLES;                /**< number of particles for the project */
-float SIDE;                      /**< side of the area considered for the project */
-float SHIFT;                     /**< Shift value to unbalanced uniformity of particles creation */
-
 /**
  * Generate NB_PARTICLES particles and call function to store them.
  *
@@ -60,8 +56,8 @@ float SHIFT;                     /**< Shift value to unbalanced uniformity of pa
 template <typename Type>
 void generate_data(Cell<Type>* root, Type vec) {
     float p_m = MASS_MAX;
-    float x_rnd, p_x = 0.5f * OCCUPATION_PERC * root->get(DIM).x;
-    float y_rnd, p_y = 0.5f * OCCUPATION_PERC * root->get(DIM).y;
+    float x_rnd, p_x = 0.5f * OCCUPATION_PERC * root->get(DIM).v[0];
+    float y_rnd, p_y = 0.5f * OCCUPATION_PERC * root->get(DIM).v[1];
 
     vector< AbstractType<Type>* > other_particle{};
 
@@ -82,7 +78,7 @@ void generate_data(Cell<Type>* root, Type vec) {
             y_rnd -= SHIFT;
 
 #if NB_DIM == DIM_3
-        float z_rnd, p_z = 0.5f * OCCUPATION_PERC * root->get(DIM).z;
+        float z_rnd, p_z = 0.5f * OCCUPATION_PERC * root->get(DIM).v[2];
         uniform_real_distribution<float> dist_z(-p_z, p_z);
 
         z_rnd = dist_z(rd);
@@ -130,7 +126,7 @@ void update_load(AbstractType<Type> *head, AbstractType<Type> *part_loaded = nul
                 n->compute_load(part_loaded);
         } /** If next element is a cell */
         else {
-            if (part_loaded != nullptr && (n->get(DIM).x / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
+            if (part_loaded != nullptr && (n->get(DIM).v[0] / (part_loaded->get(POS) - n->get(MASS_POS)).norm()) < BH_THETA)
                 n->compute_load(part_loaded);
             else
                 update_load(n, part_loaded);
@@ -251,10 +247,6 @@ void generate_file(AbstractType<Type>* particle, int iter, const string& dir) {
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
-    cin >> NB_PARTICLES;
-    SIDE = NB_PARTICLES;
-    SHIFT = SIDE / 3.0f;
-
     int width = SIDE, height = SIDE;
     auto start = high_resolution_clock::now();
 #if NB_DIM == DIM_2

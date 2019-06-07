@@ -1,7 +1,9 @@
 CXX=g++
-CXXFLAGS=-pg -g -O0 -ftree-vectorize -std=c++11
+NVCC=nvcc
+CXXFLAGS= -std=c++11 -g -Wall -O0
+CUDAFLAGS= -std=c++11 -arch=sm_35 -rdc=true 
 LDFLAGS=
-LDLIBS=
+LIBS= -lcudadevrt
 
 TARGET=nbody
 
@@ -9,20 +11,20 @@ DOC = doc
 SRCDIR=src
 OBJDIR=build
 BINDIR=.
-CXXFLAGS+= -I./$(SRCDIR)/*.hpp
+#CXXFLAGS+= -I ./$(SRCDIR)/*.hpp
 
-SOURCES  := $(wildcard $(SRCDIR)/*.cpp)
+SOURCES  := $(wildcard $(SRCDIR)/*.cu)
 INCLUDES := $(wildcard $(SRCDIR)/*.hpp)
-OBJECTS  := $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+OBJECTS  := $(SOURCES:$(SRCDIR)/%.cu=$(OBJDIR)/%.o)
 
 RM = rm -f
 
 $(BINDIR)/$(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(OBJECTS) $(LDFLAGS) -o $@
+	$(NVCC) $(OBJECTS) $(CUDAFLAGS) -o $@ $(LIBS)
 	@echo "Linking complete!"
 
-$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.cu
+	$(NVCC) $(CUDAFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
@@ -37,4 +39,3 @@ cleanall: clean
 .PHONY: doc
 doc:
 	cd $(DOC) && doxygen Doxyfile
-

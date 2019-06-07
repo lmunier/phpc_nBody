@@ -141,9 +141,9 @@ namespace Tree {
                     z = !z;
 
 #if NB_DIM == DIM_2
-                Type center = Type(size.x * (0.5 * pow(-1, (n + 1) % 2)), size.y * (0.5 * pow(-1, y)));
+                Type center = Type(size.v[0] * (0.5 * pow(-1, (n + 1) % 2)), size.v[1] * (0.5 * pow(-1, y)));
 #elif NB_DIM == DIM_3
-                Type center = Type(size.x*(0.5*pow(-1, (n+1)%2)), size.y*(0.5*pow(-1, y)), size.z*(0.5*pow(-1, z)));
+                Type center = Type(size.v[0]*(0.5*pow(-1, (n+1)%2)), size.v[1]*(0.5*pow(-1, y)), size.v[2]*(0.5*pow(-1, z)));
 #endif
 
                 center = this->_center + center;

@@ -32,15 +32,17 @@ public:
     /**
      * coordinates of the vector.
      */
-    Type x;
-    Type y;
+    Type v[DIM_2];
 
     /**
-     * Surcharge constructor of the 3D vector. Call Vector2 constructor to construct it.
+     * Surcharge constructor of the 2D vector. Call Vector2 constructor to construct it.
      *
      * @param val coordinate on all axis
      */
-    explicit Vector2(Type val = 0.0f) : x(val), y(val) {}
+    explicit Vector2(Type val = 0.0f) {
+        v[0] = val;
+        v[1] = val;
+    }
 
     /**
      * Surcharge  constructor of the 2D vector.
@@ -48,16 +50,17 @@ public:
      * @param x_val coordinate on x axis
      * @param y_val coordinate on y axis
      */
-    Vector2(Type x_val, Type y_val) :
-            x(x_val),
-            y(y_val) {}
+    Vector2(Type x_val, Type y_val) {
+        v[0] = x_val;
+        v[1] = y_val;
+    }
 
 #ifdef PRINT
     /**
      * Print the coordinates of the given vector in the console.
      */
-    virtual void print() {
-        printf("Vector2f : %f \t %f\n", this->x, this->y);
+    void print() {
+        printf("Vector2f : %f \t %f\n", this->v[0], this->v[1]);
     }
 
     /**
@@ -65,9 +68,9 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    virtual string to_file() {
+    string to_file() {
         string coord;
-        coord = to_string(this->x) + "," + to_string(this->y) + "\n";
+        coord = to_string(this->v[0]) + "," + to_string(this->v[1]) + "\n";
 
         return coord;
     }
@@ -78,15 +81,15 @@ public:
      *
      * @return norm of the given vector
      */
-    virtual Type norm() {
-        return sqrtf(this->x*this->x + this->y*this->y);
+    Type norm() {
+        return sqrtf(this->v[0]*this->v[0] + this->v[1]*this->v[1]);
     }
 
     Vector2<Type> pow(Type power) {
         Vector2<Type> tmp = Vector2<Type>();
 
-        tmp.x = powf(this->x, power);
-        tmp.y = powf(this->y, power);
+        tmp.v[0] = powf(this->v[0], power);
+        tmp.v[1] = powf(this->v[1], power);
 
         return tmp;
     }
@@ -100,13 +103,13 @@ public:
     Vector2<Type> operator- (Vector2<Type> vec) {
         Vector2<Type> tmp = Vector2<Type>();
 
-        tmp.x = this->x - vec.x;
-        if (abs(tmp.x) < EPSILON)
-            tmp.x = 0.0f;
+        tmp.v[0] = this->v[0] - vec.v[0];
+        if (abs(tmp.v[0]) < EPSILON)
+            tmp.v[0] = 0.0f;
 
-        tmp.y = this->y - vec.y;
-        if (abs(tmp.y) < EPSILON)
-            tmp.y = 0.0f;
+        tmp.v[1] = this->v[1] - vec.v[1];
+        if (abs(tmp.v[1]) < EPSILON)
+            tmp.v[1] = 0.0f;
 
         return tmp;
     }
@@ -120,8 +123,8 @@ public:
     Vector2<Type> operator+ (Vector2<Type> vec) {
         Vector2<Type> tmp = Vector2<Type>();
 
-        tmp.x = this->x + vec.x;
-        tmp.y = this->y + vec.y;
+        tmp.v[0] = this->v[0] + vec.v[0];
+        tmp.v[1] = this->v[1] + vec.v[1];
 
         return tmp;
     }
@@ -135,8 +138,8 @@ public:
     Vector2<Type> operator+ (Type scalar) {
         Vector2<Type> tmp = Vector2<Type>();
 
-        tmp.x = this->x + scalar;
-        tmp.y = this->y + scalar;
+        tmp.v[0] = this->v[0] + scalar;
+        tmp.v[1] = this->v[1] + scalar;
 
         return tmp;
     }
@@ -150,8 +153,8 @@ public:
     Vector2<Type> operator* (Type scalar) {
         Vector2<Type> tmp = Vector2<Type>();
 
-        tmp.x = scalar * this->x;
-        tmp.y = scalar * this->y;
+        tmp.v[0] = this->v[0] * scalar;
+        tmp.v[1] = this->v[1] * scalar;
 
         return tmp;
     }
@@ -165,8 +168,8 @@ public:
     Vector2<Type> operator/ (Type scalar) {
         Vector2<Type> tmp = Vector2<Type>();
 
-        tmp.x = this->x / scalar;
-        tmp.y = this->y / scalar;
+        tmp.v[0] = this->v[0] / scalar;
+        tmp.v[1] = this->v[1] / scalar;
 
         return tmp;
     }
@@ -180,8 +183,8 @@ public:
     Vector2<Type> operator/ (Vector2<Type> vec) {
         Vector2<Type> tmp = Vector2<Type>();
 
-        tmp.x = this->x / vec.x;
-        tmp.y = this->y / vec.y;
+        tmp.v[0] = this->v[0] / vec.v[0];
+        tmp.v[1] = this->v[1] / vec.v[1];
 
         return tmp;
     }
@@ -200,21 +203,23 @@ typedef Vector2<float> Vector2f;
  * @tparam Type of the vector (int, float, etc ...)
  */
 template<typename Type>
-class Vector3 : public Vector2<Type> {
+class Vector3 {
 public:
     /**
      * Last coordinate of the vector in 3D.
      */
-    Type z;
+    Type v[DIM_3];
 
     /**
      * Surcharge constructor of the 3D vector. Call Vector2 constructor to construct it.
      *
      * @param val coordinate on all axis
      */
-    explicit Vector3(Type val = 0.0f) :
-            Vector2f(val, val),
-            z(val) {}
+    explicit Vector3(Type val = 0.0f) {
+        v[0] = val;
+        v[1] = val;
+        v[2] = val;
+    }
 
     /**
      * Surcharge constructor of the 3D vector. Call Vector2 constructor to construct it.
@@ -223,16 +228,18 @@ public:
      * @param y_val coordinate on y axis
      * @param y_val coordinate on z axis
      */
-    Vector3(Type x_val, Type y_val, Type z_val) :
-        Vector2f(x_val, y_val),
-        z(z_val) {}
+    Vector3(Type x_val, Type y_val, Type z_val) {
+        v[0] = x_val;
+        v[1] = y_val;
+        v[2] = z_val;
+    }
 
 #ifdef PRINT
     /**
-     * Override the print function of Vector2 to print 3D vectors.
+     * Print function to print value in console.
      */
-    void print() override {
-        printf("Vector3f : %f \t %f \t %f\n", this->x, this->y, this->z);
+    void print() {
+        printf("Vector3f : %f \t %f \t %f\n", this->v[0], this->v[1], this->v[2]);
     }
 
     /**
@@ -240,34 +247,34 @@ public:
      *
      * @return string of the given vector's coordinates
      */
-    string to_file() override {
+    string to_file() {
         string coord;
-        coord = to_string(this->x) + "," + to_string(this->y) + "," + to_string(this->z) + "\n";
+        coord = to_string(this->v[0]) + "," + to_string(this->v[1]) + "," + to_string(this->v[2]) + "\n";
 
         return coord;
     }
 #endif
     /**
-     * Override norm computation of the given vector.
+     * Norm computation of the given vector.
      *
      * @return norm of the given vector
      */
-    Type norm() override {
-        return sqrtf(this->x*this->x + this->y*this->y + this->z*this->z);
+    Type norm() {
+        return sqrtf(this->v[0]*this->v[0] + this->v[1]*this->v[1] + this->v[2]*this->v[2]);
     }
 
     Vector3<Type> pow(Type power) {
         Vector3<Type> tmp = Vector3<Type>();
 
-        tmp.x = powf(this->x, power);
-        tmp.y = powf(this->y, power);
-        tmp.z = powf(this->z, power);
+        tmp.v[0] = powf(this->v[0], power);
+        tmp.v[1] = powf(this->v[1], power);
+        tmp.v[2] = powf(this->v[2], power);
 
         return tmp;
     }
 
     /**
-     * Override - to compute on vector3<Type>. Avoid having a too small vector which reach to segfault.
+     * Override - to compute on vector3<Type    >. Avoid having a too small vector which reach to segfault.
      *
      * @param vec vector to subtract to the given vector
      * @return given vector minus vec argument
@@ -275,17 +282,17 @@ public:
     Vector3<Type> operator- (Vector3<Type> vec) {
         Vector3<Type> tmp = Vector3<Type>();
 
-        tmp.x = this->x - vec.x;
-        if (abs(tmp.x) < EPSILON)
-            tmp.x = 0.0f;
+        tmp.v[0] = this->v[0] - vec.v[0];
+        if (abs(tmp.v[0]) < EPSILON)
+            tmp.v[0] = 0.0f;
 
-        tmp.y = this->y - vec.y;
-        if (abs(tmp.y) < EPSILON)
-            tmp.y = 0.0f;
+        tmp.v[1] = this->v[1] - vec.v[1];
+        if (abs(tmp.v[1]) < EPSILON)
+            tmp.v[1] = 0.0f;
 
-        tmp.z = this->z - vec.z;
-        if (abs(tmp.z) < EPSILON)
-            tmp.z = 0.0f;
+        tmp.v[2] = this->v[2] - vec.v[2];
+        if (abs(tmp.v[2]) < EPSILON)
+            tmp.v[2] = 0.0f;
 
         return tmp;
     }
@@ -299,9 +306,9 @@ public:
     Vector3<Type> operator+ (Vector3<Type> vec) {
         Vector3<Type> tmp = Vector3<Type>();
 
-        tmp.x = this->x + vec.x;
-        tmp.y = this->y + vec.y;
-        tmp.z = this->z + vec.z;
+        tmp.v[0] = this->v[0] + vec.v[0];
+        tmp.v[1] = this->v[1] + vec.v[1];
+        tmp.v[2] = this->v[2] + vec.v[2];
 
         return tmp;
     }
@@ -315,9 +322,9 @@ public:
     Vector3<Type> operator+ (Type scalar) {
         Vector3<Type> tmp = Vector3<Type>();
 
-        tmp.x = this->x + scalar;
-        tmp.y = this->y + scalar;
-        tmp.z = this->z + scalar;
+        tmp.v[0] = this->v[0] + scalar;
+        tmp.v[1] = this->v[1] + scalar;
+        tmp.v[2] = this->v[2] + scalar;
 
         return tmp;
     }
@@ -331,9 +338,9 @@ public:
     Vector3<Type> operator* (Type scalar) {
         Vector3<Type> tmp = Vector3<Type>();
 
-        tmp.x = scalar * this->x;
-        tmp.y = scalar * this->y;
-        tmp.z = scalar * this->z;
+        tmp.v[0] = scalar * this->v[0];
+        tmp.v[1] = scalar * this->v[1];
+        tmp.v[2] = scalar * this->v[2];
 
         return tmp;
     }
@@ -347,9 +354,9 @@ public:
     Vector3<Type> operator/ (Type scalar) {
         Vector3<Type> tmp = Vector3<Type>();
 
-        tmp.x = this->x / scalar;
-        tmp.y = this->y / scalar;
-        tmp.z = this->z / scalar;
+        tmp.v[0] = this->v[0] / scalar;
+        tmp.v[1] = this->v[1] / scalar;
+        tmp.v[2] = this->v[2] / scalar;
 
         return tmp;
     }
@@ -363,9 +370,9 @@ public:
     Vector3<Type> operator/ (Vector3<Type> vec) {
         Vector3<Type> tmp = Vector3<Type>();
 
-        tmp.x = this->x / vec.x;
-        tmp.y = this->y / vec.y;
-        tmp.z = this->z / vec.z;
+        tmp.v[0] = this->v[0] / vec.v[0];
+        tmp.v[1] = this->v[1] / vec.v[1];
+        tmp.v[2] = this->v[2] / vec.v[2];
 
         return tmp;
     }
