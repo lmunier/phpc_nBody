@@ -46,7 +46,7 @@ namespace Tree {
          * @param pos vector of the given particle
          */
         explicit Particle(float mass = 0.0f, Type pos = Type()) : _pos(pos) {
-            this->set_mass(mass);
+            this->_m = mass;
         }
 
         /**
@@ -118,7 +118,7 @@ namespace Tree {
          */
         int find_cell_idx(Type origin) override {
             int idx = 0;
-            Type tmp_vec = this->get(POS) - origin;
+            Type tmp_vec = this->_pos - origin;
 
             if(tmp_vec.x > 0)
                 idx += 1;
@@ -141,21 +141,21 @@ namespace Tree {
          * @param particle where the load is applied
          */
         void compute_load(AbstractType<Type> *particle) override {
-            Type tmp = this->get(POS) - particle->get(POS);
+            Type tmp = this->_pos - particle->get(POS);
             float d = max(tmp.norm(), EPSILON);
-            particle->set(LOAD, particle->get(LOAD) + tmp * (G * particle->get_mass() * this->get_mass()) / d);
+            particle->set(LOAD, particle->get(LOAD) + tmp * (G * this->_m) / d);
         }
 
         /**
          * Update velocity and position of a given particle for a given load on it. Reset load after update.
          */
         void update_vel_pos() override {
-            Type new_velocity = this->get(LOAD) * (DELTA_T / this->get_mass()) + this->get(VEL);
-            Type new_position = new_velocity * DELTA_T + this->get(POS);
+            Type new_velocity = this->_load * DELTA_T + this->_vel;
+            Type new_position = new_velocity * DELTA_T + this->_pos;
 
-            this->set(VEL, new_velocity);
-            this->set(POS, new_position);
-            this->set(LOAD, Type());
+            this->_vel = new_velocity;
+            this->_pos = new_position;
+            this->_load = Type();
         }
 
         /**
@@ -169,7 +169,7 @@ namespace Tree {
             if (parent == nullptr)
                 return true;
 
-            Type distance = this->get(POS) - parent->get(CENTER);
+            Type distance = this->_pos - parent->get(CENTER);
             Type cell_size = parent->get(DIM);
 
             if (2 * abs(distance.x) > cell_size.x)
@@ -191,15 +191,15 @@ namespace Tree {
          * @param add boolean value to add (true) or remove (false) attribute values of the particle
          */
         void update_cell(bool add) override {
-            auto head = this->get_parent();
+            auto head = this->_parent;
 
-            float mass_this = this->get_mass();
+            float mass_this = this->_m;
             float mass_head = head->get_mass();
 
             if (add) {
                 float mass_tot = mass_head + mass_this;
 
-                head->set(MASS_POS, (head->get(MASS_POS) * mass_head + this->get(POS) * mass_this) / mass_tot);
+                head->set(MASS_POS, (head->get(MASS_POS) * mass_head + this->_pos * mass_this) / mass_tot);
                 head->set_mass(mass_tot);
             } else {
                 float mass_tot = max(mass_head - mass_this, (float) EPSILON);
@@ -208,7 +208,7 @@ namespace Tree {
                 if (mass_tot == 0.0f)
                     head->set(MASS_POS, head->get(CENTER));
                 else
-                    head->set(MASS_POS, (head->get(MASS_POS) * mass_head - this->get(POS) * mass_this) / mass_tot);
+                    head->set(MASS_POS, (head->get(MASS_POS) * mass_head - this->_pos * mass_this) / mass_tot);
 
                 head->set_mass(mass_tot);
             }
@@ -227,7 +227,7 @@ namespace Tree {
             /** continue to go up in level to find right cell for our particle */
             while (this->is_out_boundaries()) {
                 int nb_particles = 0;
-                auto parent = this->get_parent();
+                auto parent = this->_parent;
 
                 if (parent == nullptr)
                     return -1;

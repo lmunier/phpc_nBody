@@ -1,0 +1,13 @@
+
+Currently Loaded Modules:
+  1) gcc/6.4.0   2) cuda/9.1.85
+
+ 
+
+rm -f build/main.o
+Cleaned up objects.
+rm -f ./nbody
+Cleaned up binaries.
+g++ -pg -g -std=c++11 -O3 -ftree-vectorize -I./src/*.hpp -c src/main.cpp -o build/main.o
+g++ -pg -g -std=c++11 -O3 -ftree-vectorize -I./src/*.hpp build/main.o  -o nbody
+Linking complete!

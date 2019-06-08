@@ -1,0 +1,13 @@
+
+Currently Loaded Modules:
+  1) gcc/6.4.0   2) cuda/9.1.85
+
+ 
+
+rm -f build/main.o
+Cleaned up objects.
+rm -f ./nbody
+Cleaned up binaries.
+nvcc -g -std=c++11 -arch=sm_35 -rdc=true -O3 -c src/main.cu -o build/main.o
+nvcc -g -std=c++11 -arch=sm_35 -rdc=true -O3 build/main.o -o nbody -lcudadevrt -lcurand
+Linking complete!
