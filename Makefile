@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-pg -g -std=c++11 -O3 -ftree-vectorize
+CXXFLAGS= -std=c++11 -O3 -ftree-vectorize
 LDFLAGS=
 LDLIBS=
 

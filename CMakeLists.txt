@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 3.13)
-project(Project)
-
-set(CMAKE_CXX_STANDARD 17)
-
-add_executable(Project src/main.cpp src/Vector.hpp src/constants.hpp src/Tree.hpp src/Particle.hpp src/Cell.hpp)

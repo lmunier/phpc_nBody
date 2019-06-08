@@ -255,7 +255,7 @@ void generate_file(AbstractType<Type>* particle, int iter, const string& dir) {
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
-    cin >> NB_PARTICLES;
+    NB_PARTICLES = 8192;
     SIDE = NB_PARTICLES;
     SHIFT = SIDE / 3.0f;
 
@@ -271,6 +271,7 @@ int main(int argc, char *argv[]) {
 
     /** Print all the parameters */
     cout << "-- Barnes-Hut --" << endl;
+    cout << "Barnes-Hut theta variable " << BH_THETA << endl;
     cout << "Epsilon " << EPSILON << endl;
     cout << "Nb particles " << NB_PARTICLES << endl;
     cout << "Nb dimensions " << NB_DIM << endl;
