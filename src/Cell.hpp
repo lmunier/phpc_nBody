@@ -1,7 +1,7 @@
 /**
  * @file Particle.hpp
  * @author Munier Louis
- * @date 30.05.19
+ * @date 07.06.19
  * @version 1.0
  *
  * Cell file to implement a class named cell,

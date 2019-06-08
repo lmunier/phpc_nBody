@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @author Munier Louis
- * @date 30.05.19
+ * @date 07.06.19
  * @version 1.0
  *
  * Main file of the nBody project.
