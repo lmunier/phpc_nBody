@@ -32,7 +32,7 @@
 #define EPSILON 0.005f               /**< to avoid collision between particles */
 
 #define DIM_3 3                        /**< number of dimension in 3D */
-#define NB_PARTICLES 65536                /**< number of particles for the project */
+#define NB_PARTICLES 2048                /**< number of particles for the project */
 #define SIDE NB_PARTICLES                     /**< side of the area considered for the project */
 #define SIDE_2f SIDE / 2.0f                  /**< 1/2 side of the area considered for the project */
 #define SIDE_4f SIDE / 4.0f                   /**< 1/4 side of the area considered for the project */

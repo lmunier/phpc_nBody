@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     
     unsigned int mem_size_mass = sizeof(float) * NB_PARTICLES;
     float* h_mass = (float*) malloc(mem_size_mass);
-    //float flop = (float) * (NB_PARTICLES * NB_PARTICLES + NB_PARTICLES) * DIM_3;
+    float flop = (float)(NB_PARTICLES * NB_PARTICLES + NB_PARTICLES) * DIM_3 * ITERATIONS;
     
     // allocate device memory
     float* d_pos;
@@ -222,16 +222,16 @@ int main(int argc, char *argv[]) {
     // allocate host memory for the result
     float* h_acc = (float*) malloc(mem_size_acc);
 
-    // create and start timer
-    cudaEventCreate(&start);
-    cudaEventRecord(start, NULL);
-
     // copy host memory to device
     cudaMemcpy(d_pos, h_pos, mem_size_pos, cudaMemcpyHostToDevice);
     cudaMemcpy(d_vel, h_vel, mem_size_vel, cudaMemcpyHostToDevice);
 
     // Generate random numbers on device
     curandGenerator_t gen;
+
+    // create and start timer
+    cudaEventCreate(&start);
+    cudaEventRecord(start, NULL);
 
     curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT);                 /* Create pseudo-random number generator */
     curandSetPseudoRandomGeneratorSeed(gen, (unsigned long long) start);    /* Set seed */
@@ -257,19 +257,16 @@ int main(int argc, char *argv[]) {
 #endif
     }
 
-    cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_vel, d_vel, mem_size_vel, cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_mass, d_mass, mem_size_mass, cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_acc, d_acc, mem_size_acc, cudaMemcpyDeviceToHost);
-
     // stop and destroy timer
     cudaEventCreate(&stop);
     cudaEventRecord(stop, NULL);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&msecTotal, start, stop);
 
-    //printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
-    printf("Processing time: %f (ms)\n", msecTotal);
+    cudaMemcpy(h_pos, d_pos, mem_size_pos, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_vel, d_vel, mem_size_vel, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_mass, d_mass, mem_size_mass, cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_acc, d_acc, mem_size_acc, cudaMemcpyDeviceToHost);
 
     /** Print all the parameters */
     std::cout << "-- Brut force parallelized --" << std::endl;
@@ -282,6 +279,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Maximum mass " << MASS_MAX << std::endl;
     std::cout << "Delta t " << DELTA_T << std::endl;
     std::cout << "Nb iterations " << ITERATIONS << std::endl;
+
+    printf("Processing time: %f (ms), GFLOPS: %f \n", msecTotal, flop / msecTotal/ 1e+6);
 
     // clean up memory
     free(h_pos);
