@@ -255,7 +255,7 @@ void generate_file(AbstractType<Type>* particle, int iter, const string& dir) {
  * @return success if no errors are reached
  */
 int main(int argc, char *argv[]) {
-    NB_PARTICLES = 8192;
+    cin >> NB_PARTICLES;
     SIDE = NB_PARTICLES;
     SHIFT = SIDE / 3.0f;
 
