@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     cout << "Delta t " << DELTA_T << endl;
     cout << "Nb iterations " << ITERATIONS << endl;
 
-    cout << duration_cast<microseconds>(stop - start).count() << endl;
+    cout << "Computation time (ms) " << (float) duration_cast<microseconds>(stop - start).count() / 1000.0f  << endl;
 
     return 0;
 }

@@ -36,7 +36,7 @@ using namespace std::chrono;
 
 #define G 6.67408e-11f                  /**< gravitational general constant */
 #define EPSILON 0.000005f               /**< to avoid collision between particles */
-#define BH_THETA 0.5f                   /**< Barnes-Hut threshold to consider particles as a unique one */
+#define BH_THETA 1.0f                   /**< Barnes-Hut threshold to consider particles as a unique one */
 
 #define DIM_2 2                        /**< number of dimension in 2D */
 #define DIM_3 3                        /**< number of dimension in 3D */
@@ -46,7 +46,7 @@ using namespace std::chrono;
 #define MASS_MAX 10e10f                 /**< maximum of mass value for a particle */
 
 #define DELTA_T 0.01f                   /**< duration of each update timestep */
-#define ITERATIONS 500                /**< number of iterations to solve nBody problem */
+#define ITERATIONS 200                /**< number of iterations to solve nBody problem */
 
 /**
  * @enum property of the particle

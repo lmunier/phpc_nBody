@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-std=c++11 -g -Wall -O0
+CXXFLAGS=-std=c++11 -Wall -O3
 LDFLAGS=
 LDLIBS=
 
