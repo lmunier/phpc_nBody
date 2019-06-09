@@ -19,5 +19,4 @@ nbody
 python/venv/
 
 .vscode/
-data/
 *.out
