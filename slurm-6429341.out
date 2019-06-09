@@ -8,10 +8,11 @@ rm -f build/main.o
 Cleaned up objects.
 rm -f ./nbody
 Cleaned up binaries.
-g++ -pg -g -std=c++11 -O3 -ftree-vectorize -I./src/*.hpp -c src/main.cpp -o build/main.o
-g++ -pg -g -std=c++11 -O3 -ftree-vectorize -I./src/*.hpp build/main.o  -o nbody
+g++ -g -pg -std=c++11 -O3 -ftree-vectorize -I./src/*.hpp -c src/main.cpp -o build/main.o
+g++ -g -pg -std=c++11 -O3 -ftree-vectorize -I./src/*.hpp build/main.o  -o nbody
 Linking complete!
 -- Barnes-Hut --
+Barnes-Hut theta variable 1
 Epsilon 0.005
 Nb particles 8192
 Nb dimensions 3
@@ -21,4 +22,4 @@ Occupation percentage 0.5
 Maximum mass 1e+11
 Delta t 0.01
 Nb iterations 200
-Execution time duration (ms) 46749
+Execution time duration (ms) 45612
