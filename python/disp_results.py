@@ -30,17 +30,16 @@ def read_file(pathfile):
                     xs[idx].append(float(row[0]))
                     ys[idx].append(float(row[1]))
                     zs[idx].append(float(row[2]))
-
     return xs, ys, zs
 
 
 if __name__ == "__main__":
-    pathfile = "../output/"
+    pathfile = "../nice_results/"
     dirs = os.listdir(pathfile)
 
     nfr = len(dirs)  # Number of frames
     fps = 90  # Frame per sec
-    side = 10000
+    side = 250
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -49,9 +48,9 @@ if __name__ == "__main__":
     # Read file
     xs, ys, zs = read_file(pathfile)
 
-    ax.set_xlim(-side, side/2)
-    ax.set_ylim(-side, side/2)
-    ax.set_zlim(-side, side/2)
+    ax.set_xlim(-side, side)
+    ax.set_ylim(-side, side)
+    ax.set_zlim(-side, side)
     ani = animation.FuncAnimation(fig, update, nfr, fargs=(xs, ys, zs), interval=1000 / fps)
 
     plt.rcParams['animation.html'] = 'html5'
