@@ -271,6 +271,7 @@ int main(int argc, char *argv[]) {
 
     /** Print all the parameters */
     cout << "-- Barnes-Hut --" << endl;
+    cout << "Barnes-Hut theta variable " << BH_THETA << endl;
     cout << "Epsilon " << EPSILON << endl;
     cout << "Nb particles " << NB_PARTICLES << endl;
     cout << "Nb dimensions " << NB_DIM << endl;
