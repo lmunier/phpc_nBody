@@ -96,7 +96,7 @@ void generate_data(Cell<Type>* root, Type vec) {
             root->set_parent(nullptr);
         }
 
-        /** Create new particle */
+/** Create new particle */
 #if NB_DIM == DIM_2
         auto new_particle = new Particle<Type>(dist_m(rd), Type(x_rnd, y_rnd));
 #elif NB_DIM == DIM_3
